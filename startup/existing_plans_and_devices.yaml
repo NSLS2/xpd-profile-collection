@@ -12839,127 +12839,6 @@ existing_devices:
     is_movable: true
     is_readable: true
     module: ophyd.epics_motor
-  tth:
-    classname: EpicsMotor
-    components:
-      acceleration:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      direction_of_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      high_limit_switch:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      high_limit_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      home_forward:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      home_reverse:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      low_limit_switch:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      low_limit_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_done_move:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_egu:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_is_moving:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_stop:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      offset_freeze_switch:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      set_use_switch:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_offset:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_offset_dir:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_readback:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_setpoint:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      velocity:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-    is_flyable: false
-    is_movable: true
-    is_readable: true
-    module: ophyd.epics_motor
   tth_cal:
     classname: EpicsMotor
     components:
@@ -14907,16 +14786,6 @@ existing_plans:
       name: done_signal
     properties:
       is_generator: true
-  _load_sample:
-    module: __main__
-    name: _load_sample
-    parameters:
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: msg
-    properties:
-      is_generator: true
   _read_the_first_key:
     description: Helper to get 'the right' reading.
     module: __main__
@@ -14936,16 +14805,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: mm_mode
-    properties:
-      is_generator: true
-  _unload_sample:
-    module: __main__
-    name: _unload_sample
-    parameters:
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: msg
     properties:
       is_generator: true
   _xpd_pre_plan:
@@ -15528,6 +15387,18 @@ existing_plans:
       name: exposure
     properties:
       is_generator: true
+  ct_1:
+    module: __main__
+    name: ct_1
+    parameters: []
+    properties:
+      is_generator: true
+  ct_60:
+    module: __main__
+    name: ct_60
+    parameters: []
+    properties:
+      is_generator: true
   ct_motors_plan:
     description: 'to read temperature controller and motor position and show on LiveTable
 
@@ -15558,6 +15429,21 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: md
+    properties:
+      is_generator: true
+  dark_json:
+    module: __main__
+    name: dark_json
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: json_fn
+    - default: '''dump'''
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dump_or_load
     properties:
       is_generator: true
   dark_plan:
@@ -16595,6 +16481,12 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: plan
+    properties:
+      is_generator: true
+  print_glbl_qserver:
+    module: __main__
+    name: print_glbl_qserver
+    parameters: []
     properties:
       is_generator: true
   print_summary_wrapper:
@@ -17923,6 +17815,47 @@ existing_plans:
       name: gas_in
     properties:
       is_generator: true
+  set_glbl_qserver:
+    module: __main__
+    name: set_glbl_qserver
+    parameters:
+    - default: '0.5'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: frame_acq_time
+    - default: '1000'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dk_window
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: auto_load_calib
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: shutter_control
+    - default: 'False'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: export_dark
+    - default: 'False'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: append_dark
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dark_json
+    properties:
+      is_generator: true
   set_group_infuse:
     module: __main__
     name: set_group_infuse
@@ -19077,11 +19010,6 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: num_flu
-    - default: '5'
-      kind:
-        name: KEYWORD_ONLY
-        value: 3
-      name: det1_time
     - default: '''test'''
       kind:
         name: KEYWORD_ONLY
@@ -19107,6 +19035,75 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: note
+    - kind:
+        name: VAR_KEYWORD
+        value: 4
+      name: kwargs
+    properties:
+      is_generator: true
+  xray_uvvis_plan2:
+    description: 'Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and
+      then det1.'
+    module: __main__
+    name: xray_uvvis_plan2
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det1
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det2
+    - kind:
+        name: VAR_POSITIONAL
+        value: 2
+      name: args
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: md
+    - default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_abs
+    - default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_flu
+    - default: '''test'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: sample_type
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: pump_list
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: precursor_list
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: note
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_pump
     - kind:
         name: VAR_KEYWORD
         value: 4

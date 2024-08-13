@@ -28,7 +28,7 @@ ss_cam_x = EpicsMotor('XF:28IDD-ES:2{Cam:Mnt-Ax:X}Mtr', name = 'ss_cam_x')
 
 # RPI DIFFRACTOMETER motors ### Change th only after changing in other plans
 th = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:Th}Mtr', name='th')
-tth = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='tth')
+#tth = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='tth')
 diff_x = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:X}Mtr', name='diff_x')
 diff_y = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:Y}Mtr', name='diff_y')
 diff_tth_i = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='diff_tth_i')

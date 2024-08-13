@@ -267,7 +267,8 @@ def take_a_uvvis_csv_q(sample_type='test', plot=False, csv_path=None, data_agent
     
     if spectrum_type == 'Absorbtion':
         if LED.get()=='Low' and UV_shutter.get()=='High' and qepro.correction.get()==correction_type and qepro.spectrum_type.get()==spectrum_type:
-            uid = (yield from count([qepro], md=_md))
+            # uid = (yield from count([qepro], md=_md))
+            uid = (yield from count_stream(qepro, stream_name="take_a_uvvis", md=_md))
         else:
             yield from bps.abs_set(qepro.correction, correction_type, wait=True)
             yield from bps.abs_set(qepro.spectrum_type, spectrum_type, wait=True)
@@ -279,7 +280,8 @@ def take_a_uvvis_csv_q(sample_type='test', plot=False, csv_path=None, data_agent
     
     else:
         if LED.get()=='High' and UV_shutter.get()=='Low' and qepro.correction.get()==correction_type and qepro.spectrum_type.get()==spectrum_type:
-            uid = (yield from count([qepro], md=_md))
+            # uid = (yield from count([qepro], md=_md))
+            uid = (yield from count_stream(qepro, stream_name="take_a_uvvis", md=_md))
         else:
             yield from bps.abs_set(qepro.correction, correction_type, wait=True)
             yield from bps.abs_set(qepro.spectrum_type, spectrum_type, wait=True)

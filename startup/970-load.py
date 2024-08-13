@@ -57,11 +57,18 @@ def pass_start_beamtime(proposal_num, wavelength, experimenters=[], test=False, 
     data_session = proposal_json["data_session"]
     all_safs = proposal_json["safs"]
     # TODO: implement some logic here if there are more than 1 safs.
-    first_saf = all_safs[0]
-    instruments = first_saf["instruments"]
-    if "XPD" not in instruments:
-        raise ValueError(f"XPD is not in the list of instruments: {instruments}")
-    saf_num = first_saf["saf_id"]
+    #first_saf = all_safs[0]
+    #instruments = first_saf["instruments"]
+    #if "XPD" not in instruments:
+    #    raise ValueError(f"XPD is not in the list of instruments: {instruments}")
+    #saf_num = first_saf["saf_id"]
+    for saf in all_safs:
+        instruments = saf["instruments"]
+        if "XPD" in instruments:
+            saf_num = saf["saf_id"]
+        else:
+            pass
+            
     
     PI_last = None
     all_users = proposal_json["users"]
@@ -164,4 +171,14 @@ RE.md.update(md)
 # insert header to db, either simulated or real
 RE.subscribe(db.insert, "all")
 RE.beamtime = bt
+print(f"{RE.beamtime = }")
+
+def ct_1():
+    yield from RE.beamtime.scanplans["ct_1"].factory()
+
+
+def ct_60():
+    yield from RE.beamtime.scanplans["ct_60"].factory()
+
+
 RE.clear_suspenders()
