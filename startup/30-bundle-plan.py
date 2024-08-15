@@ -200,7 +200,7 @@ def xray_uvvis_plan(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_t
 
 
 def xray_uvvis_plan2(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_type = 'test',
-                    pump_list=None, precursor_list=None, mixer=None, note=None, dilute_pump=None, **kwargs):
+                    pump_list=None, precursor_list=None, mixer=None, note=None, **kwargs):
     """Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and then det1.
         
     Generate a scan containing three stream names: ['scattering', 'absorbance', 'fluorescence']
@@ -301,8 +301,11 @@ def xray_uvvis_plan2(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
             # yield from bps.sleep(2)
 
         yield from bps.mv(LED, 'Low', UV_shutter, 'Low')
-        yield from stop_group([dilute_pump])
-        print(f'\nUV-Vis acquisition finished and stop infusing of {dilute_pump.name} for toluene dilution\n')
+        try:  
+            yield from stop_group([pump_list[-1]])
+            print(f'\nUV-Vis acquisition finished and stop infusing of {pump_list[-1].name} for toluene dilution\n')
+        except (TypeError):
+            print(f'\n{pump_list = }. No pump_list!! \n')
         
        
         ## Start to collecting scattering
