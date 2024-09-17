@@ -305,8 +305,8 @@ class PerkinElmerContinuousStage(PerkinElmerContinuous):
 
 
 # PE1/2/3 PV prefixes in one place:
+#pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
 pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
-#pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
 pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE2}'
 pe3_pv_prefix = 'XF:28IDD-ES:2{Det:PE3}'
 
@@ -315,7 +315,7 @@ pe3_pv_prefix = 'XF:28IDD-ES:2{Det:PE3}'
 
 pe1 = PerkinElmerStandardV33(pe1_pv_prefix, name='pe1', read_attrs=['tiff'])
 pe1m = PerkinElmerMulti(pe1_pv_prefix, name='pe1', read_attrs=['tiff'],
-                        trigger_cycle=[[('image', {shctl1: 1}),
+                       trigger_cycle=[[('image', {shctl1: 1}),
                                         ('dark_image', {shctl1: 0})]])
 pe1c = PerkinElmerContinuous(pe1_pv_prefix, name='pe1',
                              read_attrs=['tiff', 'stats1.total'],

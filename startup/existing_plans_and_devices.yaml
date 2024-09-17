@@ -17804,6 +17804,16 @@ existing_plans:
       name: md
     properties:
       is_generator: true
+  set_area_det_qserver:
+    module: __main__
+    name: set_area_det_qserver
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: area_det
+    properties:
+      is_generator: true
   set_gas:
     description: short plan to set the gas
     module: __main__
@@ -17853,7 +17863,7 @@ existing_plans:
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: dark_json
+      name: json_fn
     properties:
       is_generator: true
   set_group_infuse:
@@ -19099,11 +19109,6 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: note
-    - default: None
-      kind:
-        name: KEYWORD_ONLY
-        value: 3
-      name: dilute_pump
     - kind:
         name: VAR_KEYWORD
         value: 4

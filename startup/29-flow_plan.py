@@ -203,6 +203,7 @@ def take_ref_bkg_q(integration_time=15, num_spectra_to_average=16,
     yield from bps.sleep(5)
     yield from qepro.get_dark_frame2()
     uid = (yield from count([qepro], md = {'note':'Dark'}))
+    print(f'Dark uid is {uid}')
     if csv_path != None:
         print(f'Export dark file to {csv_path}...')
         qepro.export_from_scan(uid, csv_path, sample_type=f'Dark_{integration_time}ms', data_agent=data_agent)
@@ -211,12 +212,14 @@ def take_ref_bkg_q(integration_time=15, num_spectra_to_average=16,
     yield from bps.sleep(2)
     yield from qepro.get_reference_frame2()
     uid = (yield from count([qepro], md = {'note':ref_name}))
-
+    print(f'Reference uid is {uid}')
     yield from bps.mv(LED, 'Low', UV_shutter, 'Low')
 
     if csv_path != None:
         print(f'Export reference file to {csv_path}...')
         qepro.export_from_scan(uid, csv_path, sample_type=f'{ref_name}_{integration_time}ms', data_agent=data_agent)
+        
+    # return uid
 
 
 
@@ -225,7 +228,7 @@ def count_stream(det, stream_name="primary", md=None):
     @bpp.stage_decorator([det])
     @bpp.run_decorator(md=md)
     def _inner_count():
-        yield from bps.trigger(det)
+        yield from bps.trigger(det, wait=True)
         yield from bps.create(name=stream_name)
         reading = (yield from bps.read(det))
         yield from bps.save()

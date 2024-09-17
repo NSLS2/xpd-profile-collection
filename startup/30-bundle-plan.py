@@ -30,7 +30,7 @@ def dark_json(json_fn, dump_or_load='dump'):
 
 
 def set_glbl_qserver(frame_acq_time=0.5, dk_window=1000, auto_load_calib=True, shutter_control=True, 
-                     export_dark=False, append_dark=False, dark_json=None):
+                     export_dark=False, append_dark=False, json_fn=None):
     
     glbl['frame_acq_time']=frame_acq_time
     print(f"{glbl['frame_acq_time'] = }")
@@ -45,16 +45,25 @@ def set_glbl_qserver(frame_acq_time=0.5, dk_window=1000, auto_load_calib=True, s
     print(f"{glbl['shutter_control'] = }")
     
     if export_dark:
-        _dark_json(glbl['_dark_dict_list'], dark_json, dump_or_load='dump')
+        yield from dark_json(json_fn, dump_or_load='dump')
         
     
     if append_dark:
-        _dark_json(glbl['_dark_dict_list'], dark_json, dump_or_load='load')
+        yield from dark_json(json_fn, dump_or_load='load')
     
     
     print(f"{glbl['_dark_dict_list'] = }")
     
     print(f"{glbl['mask_kwargs'] = }")
+    
+    yield from bps.sleep(1)
+    
+    
+def set_area_det_qserver(area_det):
+    
+    xpd_configuration['area_det'] = area_det
+    
+    print(f"The default detector: {xpd_configuration['area_det'] =  }")
     
     yield from bps.sleep(1)
     
