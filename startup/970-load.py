@@ -43,7 +43,7 @@ import httpx
 from pprint import pformat
 
 
-def pass_start_beamtime(proposal_num, wavelength, experimenters=[], test=False, commissioning=False):
+def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], test=False, commissioning=False):
     # Copied from NSLS2/start-experiment:
     nslsii_api_client = httpx.Client(base_url="https://api.nsls2.bnl.gov")
     cycle_response = nslsii_api_client.get("/v1/facility/nsls2/cycles/current").raise_for_status()
@@ -56,18 +56,19 @@ def pass_start_beamtime(proposal_num, wavelength, experimenters=[], test=False, 
     proposal_json = proposal_response.json()["proposal"]
     data_session = proposal_json["data_session"]
     all_safs = proposal_json["safs"]
+    print(all_safs)
     # TODO: implement some logic here if there are more than 1 safs.
     #first_saf = all_safs[0]
     #instruments = first_saf["instruments"]
     #if "XPD" not in instruments:
     #    raise ValueError(f"XPD is not in the list of instruments: {instruments}")
     #saf_num = first_saf["saf_id"]
-    for saf in all_safs:
-        instruments = saf["instruments"]
-        if "XPD" in instruments:
-            saf_num = saf["saf_id"]
-        else:
-            pass
+    #for saf in all_safs:
+    #    instruments = saf["instruments"]
+    #    if "XPD" in instruments:
+    #        saf_num = saf["saf_id"]
+    #    else:
+    #        pass
             
     
     PI_last = None
