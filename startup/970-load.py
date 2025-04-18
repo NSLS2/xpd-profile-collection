@@ -162,8 +162,11 @@ class MoreCustomizedRunEngine(CustomizedRunEngine):
 
 from nslsii import configure_kafka_publisher
 from bluesky.utils import ts_msg_hook
+from redis_json_dict import RedisJSONDict
+import redis
 
 RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
+RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
 # RE.msg_hook = ts_msg_hook
 
 configure_kafka_publisher(RE, beamline_name='xpd')
