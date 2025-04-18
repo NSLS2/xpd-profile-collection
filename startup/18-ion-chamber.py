@@ -36,65 +36,15 @@ class IonChamber(Device):
 
     def stage(self, *args, **kwargs):
         self.stop_signal.put(0)
-        self.expected_acq_time = self.period.get() * self.trigs_to_average + self.timeout_tolerance
-
-        ttime.sleep(0.1)
         super().stage(*args, **kwargs)
 
     def trigger(self):
-        #print("!!! Starting trigger")
-        self.acq_time_start = ttime.time()
         
-        # TODO: perform collection of individual amps readings based on user specified period of time
         def cb(value, old_value, **kwargs):
-            #print(f"{value}, {old_value}")
-            if ttime.time() > self.acq_time_start + self.expected_acq_time:
-                #self.stop_signal.put(1)
-                print("Ion chamber is stuck! Breaking...")
-                return True
-            elif value >= self.trigs_to_average and not old_value >= self.trigs_to_average:
-                self.stop_signal.put(1)
+            if value >= self.trigs_to_average:
                 return True
             else:
                 return False
-            # if value == 0:  
-            #     self.reset_to_zero = True
-            #     return False
-            # # First make sure that we see a reset trigger count = 0                
-            # elif not self.reset_to_zero:
-            #     return False
-            # # print(f"{old_value} -> {value}\n{kwargs}")
-            # # print(f"### max_counts = {self.max_counts.get()}")
-            # elif int(value) < self.max_counts.get():
-            #     if int(value) != int(old_value):
-            #         print(f"{value} ---- {self.max_counts.get()}")
-            #         print(f"{ttime.monotonic()} collecting timestamps, amps, coulombs")
-            #         # self._timestamps.append(ttime.time())
-            #         self._timestamps.append(kwargs["timestamp"])
-            #         self._amps_list.append(self.amps.get())
-            #         self._coulombs_list.append(self.coulombs.get())
-            #     return False
-            # else:
-            #     # print(f"**** {value}")
-            #     print("last addition")
-            #     self._timestamps.append(kwargs["timestamp"])
-            #     self._amps_list.append(self.amps.get() * A_2_NA_SCALE_FACTOR)
-            #     self._coulombs_list.append(self.coulombs.get())
-            #     print(f"{ttime.monotonic()} finished collecting")
-            #     self.timestamps.put(list(self._timestamps))
-            #     self.amps_list.put(list(self._amps_list))
-            #     self.coulombs_list.put(list(self._coulombs_list))
-            #     print(f"^^^ {len(list(self._amps_list))}")
-
-            #     self.amps_mean.put(np.mean(self._amps_list))
-            #     self.coulombs_mean.put(np.mean(self._coulombs_list))
-
-            #     self.stop_signal.put(1)
-            #     self.reset_to_zero = False
-                
-            #     print(f"{ttime.monotonic()} finished single averaging set")
-            #     return True
-
 
         # Make sure all averages are reset to zero.
         self.clear_averages.put(1)
@@ -102,14 +52,7 @@ class IonChamber(Device):
         st = SubscriptionStatus(self.trigger_count, callback=cb, run=False)
         self.initiate.put(1)
 
-        #print("!!! Initiated")
-
         return st
-
-    def unstage(self, *args, **kwargs):
-        super().unstage(*args, **kwargs)
-        #self.stop_signal.put(1)
-        # self.stop_signal.put(0)
 
 
 ion_chamber = IonChamber("XF:28IDC-BI{IC101}", name="ion_chamber")
