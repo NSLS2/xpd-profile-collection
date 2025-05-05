@@ -1,5 +1,5 @@
 def ion_chamber_in(y=36):
-    " move ion chamber in to the beam"
+    " move ion chamber in to the beam, default is 36"
     #ecal_x.move(x)
     ecal_y.move(y)
 
@@ -8,7 +8,7 @@ def ion_chamber_out(y=-10):
     #ecal_x.move(x)
     ecal_y.move(y)
 
-def takeone(sample, exp_time, num=1, delay_num=0, dets=[ion_chamber] ):
+def takeone(sample, exp_time, num=1, delay_num=0, autoshutter=True, dets=None):
     """ take one data, collect both det and ion_chamber data
 
     parameter:
@@ -17,13 +17,21 @@ def takeone(sample, exp_time, num=1, delay_num=0, dets=[ion_chamber] ):
     exp_time (float): exposure time in seconds
 
     """
+    if dets is None:
+        dets = []
     area_det = xpd_configuration['area_det']
     dets=[area_det] + dets
     delay_num = delay_num + exp_time
-    plan = ct_motors_plan(dets, exp_time, num=num, delay=delay_num)
+    plan = ct_motors_plan(dets, exp_time, num=num, delay=delay_num, autoshutter=autoshutter)
     xrun(sample, plan)
 
+def set_ion_chamber(acq_time, num_frame):
+    #yield from bps.mv(ecal_y, 36)
+    if ion_chamber.period.get()!= acq_time:
+        ion_chamber.period.set(acq_time)
+    ion_chamber.trigs_to_average = num_frame 
 
+    
 def plan_with_calib(dets, exp_time, num, calib_file, md=None):
     """ plan for a scan with detectors and apply calibration from a file.
 
@@ -51,10 +59,7 @@ def plan_with_calib(dets, exp_time, num, calib_file, md=None):
     _md.update(md or {})
 
     if ion_chamber in dets:
-        yield from bps.mv(ecal_y, 36)
-        if ion_chamber.period.get()!= acq_time:
-            yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        set_ion_chamber(acq_time, num_frame)
     
     motors = dets[1:]
     plan = count_with_calib(dets, num, calibration_md=calib_file, md=_md)
@@ -110,7 +115,7 @@ def count_with_calib(detectors: list, num: int = 1, delay: float = None, *, cali
     return sts
 
 
-def ct_motors_plan(dets, exp_time, num=1, delay=0, md=None):
+def ct_motors_plan(dets, exp_time, num=1, delay=0, autoshutter=True,md=None):
     """plan for performing multiple readings of detectors (e.g., temperature controller, motor positions) and display results
     in real-time using LiveTable.
 
@@ -140,19 +145,17 @@ def ct_motors_plan(dets, exp_time, num=1, delay=0, md=None):
     _md.update(md or {})
 
     if ion_chamber in dets:
-        yield from bps.mv(ecal_y, 36)
-        if ion_chamber.period.get()!= acq_time:
-            yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        set_ion_chamber(acq_time, num_frame)
     
     motors = dets[1:]
     plan = bp.count(dets, num, delay, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable(motors))
-    plan = bpp.plan_mutator(plan, inner_shutter_control)
+    if autoshutter is True:
+        plan = bpp.plan_mutator(plan, inner_shutter_control)
     yield from plan
 
 
-def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None):
+def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, autoshutter=True,md=None, dets=None):
     """ plan for 1D line scan by moving a motor between two positions and recording measurements at multiple points.
 
     Parameters:
@@ -185,21 +188,19 @@ def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None
     _md.update(md or {})
 
     if ion_chamber in dets:
-        yield from bps.mv(ecal_y, 36)
-        if ion_chamber.period.get()!= acq_time:
-            yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        set_ion_chamber(acq_time, num_frame)
     
     area_det = xpd_configuration['area_det']
 
     plan = bp.scan([area_det] + dets, motor, xstart, xend, xpoints, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable([motor] + dets))
-    plan = bpp.plan_mutator(plan, inner_shutter_control)
+    if autoshutter is True:
+        plan = bpp.plan_mutator(plan, inner_shutter_control)
     yield from plan
 
 
-def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sample_x, motory=sample_y, md=None,
-             dets=None):
+def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sample_x, motory=sample_y, 
+             autoshutter=True, md=None, dets=None):
 
     """ plan for 2D grid scan by moving two motors across specified ranges and collecting data using detectors.
 
@@ -236,19 +237,18 @@ def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sa
     _md.update(md or {})
 
     if ion_chamber in dets:
-        if ion_chamber.period.get()!= acq_time:
-            yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        set_ion_chamber(acq_time, num_frame)
     
     area_det = xpd_configuration['area_det']
 
     plan = bp.grid_scan([area_det]+dets, motory, ystart, ystop, ypoints, motorx, xstart, xstop, xpoints, True, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable([motorx, motory]+dets))
-    plan = bpp.plan_mutator(plan, inner_shutter_control)
+    if autoshutter is True:
+        plan = bpp.plan_mutator(plan, inner_shutter_control)
     yield from plan
 
 
-def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, md=None, dets=None):
+def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, autoshutter=True, md=None, dets=None):
     """ plan for a scan over a set of predefined x and y positions.
 
     Parameters:
@@ -286,14 +286,12 @@ def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, md
     area_det = xpd_configuration['area_det']
 
     if ion_chamber in dets:
-        yield from bps.mv(ecal_y, 36)
-        if ion_chamber.period.get()!= acq_time:
-            yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        set_ion_chamber(acq_time, num_frame)
 
     plan = bp.list_scan([area_det]+dets, motorx, posxlist, motory, posylist, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable([motorx, motory]+dets))
-    plan = bpp.plan_mutator(plan, inner_shutter_control)
+    if autoshutter is True:
+        plan = bpp.plan_mutator(plan, inner_shutter_control)
     yield from plan
 
 def take_one_dark(sample, exp_time, dets=[ion_chamber]):
