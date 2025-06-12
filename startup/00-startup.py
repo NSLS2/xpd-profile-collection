@@ -19,7 +19,7 @@ ophyd.signal.EpicsSignal.set_defaults(connection_timeout=5)
 
 nslsii.configure_base(get_ipython().user_ns, 'xpd', pbar=True, bec=True,
                       magics=True, mpl=True, epics_context=False,
-                      publish_documents_with_kafka=True)
+                      publish_documents_with_kafka=True, redis_url="info.xpd.nsls2.bnl.gov")
 
 del one_1d_step
 del one_nd_step

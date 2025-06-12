@@ -104,9 +104,7 @@ md = {}
 md['beamline_id'] = glbl['beamline_id']
 md['group'] = glbl['group']
 md['facility'] = glbl['facility']
-#md.update({"cycle": "2024-2", "proposal_id": "pass-315035"})
-#md.update({"cycle": "commissioning", "proposal_id": "pass-315985"})
-# instantiate xrun without beamtime, like bluesky setup
+
 xrun = CustomizedRunEngine(None)
 xrun.md.update(md)
 
