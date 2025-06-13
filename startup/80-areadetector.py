@@ -149,7 +149,17 @@ class XPDFileStoreTIFFSquashing(FileStoreTIFFSquashing):
 
 class XPDTIFFPlugin(TIFFPlugin, XPDFileStoreTIFFSquashing,
                     FileStoreIterativeWrite):
-    pass
+
+    def update_paths(self):
+        directory_path_leaf = f"proposals/{self._md['cycle']}/{self._md['data_session']}/assets/{self.parent.name}/%Y/%m/%d"
+        self.write_path_template = f"J:\\{directory_path_leaf.replace("/", "\\")}"
+        self.read_path_template = f"{self.root}/{directory_path_leaf}
+
+    def stage(self):
+
+        # Update the read and write path here with information from RE.md
+        self.update_paths()
+        super().stage()
 
 
 class XPDHDF5Plugin(HDF5Plugin, FileStoreHDF5IterativeWrite):
@@ -167,12 +177,8 @@ class XPDPerkinElmer(PerkinElmerDetector):
              cam_name='cam',  # used to configure "tiff squashing"
              proc_name='proc',  # ditto
              read_attrs=[],
-             root='/nsls2/data/xpd-new/legacy/raw/')
+             root='/nsls2/data/xpd-new/')
 
-    # hdf5 = C(XPDHDF5Plugin, 'HDF1:',
-    #          write_path_template='G:/pe1_data/%Y/%m/%d/',
-    #          read_path_template='/direct/XF28ID2/pe1_data/%Y/%m/%d/',
-    #          root='/direct/XF28ID2/')
 
     proc = C(ProcessPlugin, 'Proc1:')
 
@@ -272,36 +278,12 @@ class ContinuousAcquisitionTrigger(BlueskyInterface):
 class PerkinElmerContinuous(ContinuousAcquisitionTrigger, XPDPerkinElmer):
     pass
 
-class PerkinElmerStandard(SingleTrigger, XPDPerkinElmer):
-    pass
 
 class PerkinElmerStandardV33(SingleTriggerV33, XPDPerkinElmer):
     pass
 
 class PerkinElmerMulti(MultiTrigger, XPDPerkinElmer):
     shutter = C(EpicsSignal, 'XF:28IDC-ES:1{Sh:Exp}Cmd-Cmd')
-
-class PerkinElmerContinuousStage(PerkinElmerContinuous):
-    stage_tries = 6
-    def stage(self):
-        for i in range(stage_tries):
-            try:
-                super().stage()
-            except TimeoutError as e:
-                if i == self.stage_tries-1:
-                    raise
-                print(e)
-
-    def unstage(self):
-        for i in range(stage_tries):
-            try:
-                super().unstage()
-            except TimeoutError as e:
-                if i == self.stage_tries-1:
-                    raise
-                print(e)
-
-
 
 
 # PE1/2/3 PV prefixes in one place:
@@ -352,12 +334,7 @@ class XPDPerkinElmerDEX(PerkinElmerDetector):
              cam_name='cam',  # used to configure "tiff squashing"
              proc_name='proc',  # ditto
              read_attrs=[],
-             root='/nsls2/data/xpd-new/legacy/raw/')
-
-    # hdf5 = C(XPDHDF5Plugin, 'HDF1:',
-    #          write_path_template='G:/pe1_data/%Y/%m/%d/',
-    #          read_path_template='/direct/XF28ID2/pe1_data/%Y/%m/%d/',
-    #          root='/direct/XF28ID2/')
+             root='/nsls2/data/xpd-new/')
 
     proc = C(ProcessPlugin, 'Proc1:')
 
@@ -410,8 +387,9 @@ for det in [
             pe2, pe2m, pe2c,
             #dexela1c
             ]:
-    det.tiff.read_path_template = f'/nsls2/data/xpd-new/legacy/raw/{det.name}_data/%Y/%m/%d/'
-    det.tiff.write_path_template = f'J:\\legacy\\raw\\{det.name}_data\\%Y\\%m\\%d\\'
+    # det.tiff.read_path_template = f'/nsls2/data/xpd-new/legacy/raw/{det.name}_data/%Y/%m/%d/'
+    # det.tiff.write_path_template = f'J:\\legacy\\raw\\{det.name}_data\\%Y\\%m\\%d\\'
+    det.tiff.update_paths()
     det.cam.bin_x.kind = 'config'
     det.cam.bin_y.kind = 'config'
     det.detector_type.kind = 'config'
