@@ -411,7 +411,7 @@ for det in [
             #dexela1c
             ]:
     det.tiff.read_path_template = f'/nsls2/data/xpd-new/legacy/raw/{det.name}_data/%Y/%m/%d/'
-    det.tiff.write_path_template = f'J:\\%Y\\%m\\%d\\'
+    det.tiff.write_path_template = f'J:\\legacy\\raw\\{det.name}_data\\%Y\\%m\\%d\\'
     det.cam.bin_x.kind = 'config'
     det.cam.bin_y.kind = 'config'
     det.detector_type.kind = 'config'
