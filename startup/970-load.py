@@ -123,7 +123,8 @@ print("loaded beamline config")
 xrun.md['beamline_config'] = beamline_config
 
 # insert header to db, either simulated or real
-xrun.subscribe(db.insert, 'all')
+xrun.subscribe(tiled_inserter.insert, 'all')
+# xrun.subscribe(db.insert, 'all')
 
 # We need to repeat it here for `xrun` as RE is not used here...
 nslsii.configure_kafka_publisher(xrun, "xpd")
@@ -172,7 +173,8 @@ configure_kafka_publisher(RE, beamline_name='xpd')
 RE.md.update(md)
 
 # insert header to db, either simulated or real
-RE.subscribe(db.insert, "all")
+RE.subscribe(tiled_inserter.insert, "all")
+# RE.subscribe(db.insert, "all")
 RE.beamtime = bt
 print(f"{RE.beamtime = }")
 

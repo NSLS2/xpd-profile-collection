@@ -23,12 +23,18 @@ ophyd.signal.EpicsSignal.set_defaults(connection_timeout=5)
 
 
 class TiledInserter:
+    
+    def __init__(self, tiled_writing_client):
+        
+        self.tiled_writing_client = tiled_writing_client
+        
     def insert(self, name, doc):
         ATTEMPTS = 20
         error = None
+        
         for attempt in range(ATTEMPTS):
             try:
-                tiled_writing_client.post_document(name, doc)
+                self.tiled_writing_client.post_document(name, doc)
             except Exception as exc:
                 print("Document saving failure:", repr(exc))
                 error = exc
@@ -44,19 +50,19 @@ class TiledInserter:
 tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
-tiled_inserter = TiledInserter()
+tiled_inserter = TiledInserter(tiled_writing_client)
 c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
 db = Broker(c)
 
 nslsii.configure_base(
     get_ipython().user_ns,
-    TiledInserter,
+    tiled_inserter,
     pbar=True,
     bec=True,
     magics=True,
     mpl=True,
     epics_context=False,
-    publish_documents_with_kafka=True,
+    publish_documents_with_kafka="xpd",
     redis_url="info.xpd.nsls2.bnl.gov",
 )
 
