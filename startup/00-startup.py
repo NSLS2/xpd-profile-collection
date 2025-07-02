@@ -42,7 +42,7 @@ class TiledInserter:
 
 # Define tiled catalog
 tiled_writing_client = from_profile(
-    "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_TLA"]
+    "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
 tiled_inserter = TiledInserter()
 c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
