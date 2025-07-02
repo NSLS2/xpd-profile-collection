@@ -151,9 +151,10 @@ class XPDTIFFPlugin(TIFFPlugin, XPDFileStoreTIFFSquashing,
                     FileStoreIterativeWrite):
 
     def update_paths(self):
-        directory_path_leaf = f"proposals/{self._md['cycle']}/{self._md['data_session']}/assets/{self.parent.name}/%Y/%m/%d"
-        self.write_path_template = f"J:\\{directory_path_leaf.replace("/", "\\")}"
-        self.read_path_template = f"{self.root}/{directory_path_leaf}
+        directory_path_leaf = f"proposals/{RE.md['cycle']}/{RE.md['data_session']}/assets/{self.parent.name}/%Y/%m/%d"
+        win_dir = directory_path_leaf.replace("/", "\\")
+        self.write_path_template = f"J:\\{win_dir}"
+        self.read_path_template = f"{self.root}/{directory_path_leaf}"
 
     def stage(self):
 
