@@ -57,6 +57,7 @@ nslsii.configure_base(
     mpl=True,
     epics_context=False,
     publish_documents_with_kafka=True,
+    redis_url="info.xpd.nsls2.bnl.gov",
 )
 
 del one_1d_step
