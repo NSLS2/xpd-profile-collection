@@ -50,7 +50,7 @@ db = Broker(c)
 
 nslsii.configure_base(
     get_ipython().user_ns,
-    "xpd",
+    TiledInserter,
     pbar=True,
     bec=True,
     magics=True,
