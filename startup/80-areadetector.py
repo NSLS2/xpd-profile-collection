@@ -154,7 +154,7 @@ class XPDTIFFPlugin(TIFFPlugin, XPDFileStoreTIFFSquashing,
         directory_path_leaf = f"proposals/{RE.md['cycle']}/{RE.md['data_session']}/assets/{self.parent.name}/%Y/%m/%d/"
         win_dir = directory_path_leaf.replace("/", "\\")
         self.write_path_template = f"J:\\{win_dir}"
-        self.read_path_template = f"{self.root}/{directory_path_leaf}"
+        self.read_path_template = f"/nsls2/data/xpd-new/{directory_path_leaf}"
 
     def stage(self):
 
