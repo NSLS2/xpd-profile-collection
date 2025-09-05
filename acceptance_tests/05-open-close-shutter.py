@@ -1,5 +1,5 @@
 "Watch for shutter to close and open."
-from bluesky.plans import pchain, wait, abs_set
+from bluesky.plan_stubs import pchain, wait, abs_set
 from ophyd import set_and_wait
 
 
