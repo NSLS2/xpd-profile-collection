@@ -106,6 +106,7 @@ md['group'] = glbl['group']
 md['facility'] = glbl['facility']
 
 xrun = CustomizedRunEngine(None)
+xrun.md = RE.md
 xrun.md.update(md)
 
 print("loading beamline config")
