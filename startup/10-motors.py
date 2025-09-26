@@ -42,6 +42,9 @@ hrm_r = EpicsMotor('XF:28IDC-OP:1{Mono:HRM-Ax:R}Mtr', name='hrm_r')
 pe1_x = EpicsMotor('XF:28IDC-ES:1{Det:PE1-Ax:X}Mtr', name='pe1_x')
 pe1_z = EpicsMotor('XF:28IDC-ES:1{Det:PE1-Ax:Z}Mtr', name='pe1_z')
 
+# Pinhole motions
+pinhole_x = EpicsMotor('XF:28IDC-ES:1{PinHole:XRD-Ax:X}Mtr', name='pinhole_x')
+pinhole_y = EpicsMotor('XF:28IDC-ES:1{PinHole:XRD-Ax:Y}Mtr', name='pinhole_y')
 
 # MAD motions
 mad_pitch=EpicsMotor('XF:28IDC-ES:1{MAD:DMS-Ax:Pitch}Mtr', name='mad_pitch')

@@ -21,6 +21,22 @@ ophyd.signal.EpicsSignal.set_defaults(connection_timeout=5)
 # this command takes away much of the boilerplate for settting up a profile
 # (such as setting up best effort callbacks etc)
 
+from IPython.terminal.prompts import Prompts, Token
+
+class ProposalIDPrompt(Prompts):
+    def in_prompt_tokens(self, cli=None):
+        return [
+            (
+                Token.Prompt,
+                f"{RE.md.get('data_session', 'N/A')} [",
+            ),
+            (Token.PromptNum, str(self.shell.execution_count)),
+            (Token.Prompt, "]: "),
+        ]
+
+
+ip = get_ipython()
+ip.prompts = ProposalIDPrompt(ip)
 
 class TiledInserter:
     

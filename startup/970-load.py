@@ -40,10 +40,14 @@ from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
                                   _end_beamtime)
 
 import httpx
+from nslsii.sync_experiment import sync_experiment
 from pprint import pformat
 
 
 def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], test=False, commissioning=False):
+
+    sync_experiment(proposal_num, "XPD")
+
     # Copied from NSLS2/start-experiment:
     nslsii_api_client = httpx.Client(base_url="https://api.nsls2.bnl.gov")
     cycle_response = nslsii_api_client.get("/v1/facility/nsls2/cycles/current").raise_for_status()
@@ -51,7 +55,7 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
         cycle = cycle_response.json()["cycle"]
     else:
         cycle = "commissioning"
-    
+
     proposal_response = nslsii_api_client.get(f"/v1/proposal/{proposal_num}").raise_for_status()
     proposal_json = proposal_response.json()["proposal"]
     data_session = proposal_json["data_session"]
@@ -69,8 +73,8 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
     #        saf_num = saf["saf_id"]
     #    else:
     #        pass
-            
-    
+
+
     PI_last = None
     all_users = proposal_json["users"]
     for user in all_users:
@@ -82,9 +86,11 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
 
     bt = _start_beamtime(PI_last, saf_num, experimenters=experimenters, wavelength=wavelength, test=test)
 
-    bt["cycle"] = cycle
-    bt["data_session"] = data_session
-    
+    #bt["cycle"] = cycle
+    #bt["data_session"] = data_session
+    bt["cycle"] = RE.md["cycle"]
+    bt["data_session"] = RE.md["data_session"]
+
     return bt
 
 
@@ -176,8 +182,14 @@ RE.md.update(md)
 # insert header to db, either simulated or real
 RE.subscribe(tiled_inserter.insert, "all")
 # RE.subscribe(db.insert, "all")
-RE.beamtime = bt
-print(f"{RE.beamtime = }")
+if bt:
+    RE.beamtime = bt
+try:
+    print(f"{RE.beamtime = }")
+except RuntimeError as e:
+    print("=====================\n\n")
+    print(str(e))
+    print("=====================\n\n")
 
 def ct_1():
     yield from RE.beamtime.scanplans["ct_1"].factory()
