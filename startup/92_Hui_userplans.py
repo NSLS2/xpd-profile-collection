@@ -4,7 +4,7 @@ def ion_chamber_in(y=36):
     ecal_y.move(y)
 
 def ion_chamber_out(y=-10):
-    """ move ion chamber out to let laser in"""    
+    """ move ion chamber out to let laser in"""
     #ecal_x.move(x)
     ecal_y.move(y)
 
@@ -54,8 +54,8 @@ def plan_with_calib(dets, exp_time, num, calib_file, md=None):
         yield from bps.mv(ecal_y, 36)
         if ion_chamber.period.get()!= acq_time:
             yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
-    
+        ion_chamber.trigs_to_average = num_frame
+
     motors = dets[1:]
     plan = count_with_calib(dets, num, calibration_md=calib_file, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable(motors))
@@ -143,8 +143,8 @@ def ct_motors_plan(dets, exp_time, num=1, delay=0, md=None):
         yield from bps.mv(ecal_y, 36)
         if ion_chamber.period.get()!= acq_time:
             yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
-    
+        ion_chamber.trigs_to_average = num_frame
+
     motors = dets[1:]
     plan = bp.count(dets, num, delay, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable(motors))
@@ -152,7 +152,7 @@ def ct_motors_plan(dets, exp_time, num=1, delay=0, md=None):
     yield from plan
 
 
-def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None):
+def lineplan(exp_time, xstart, xend, xpoints, motor=None, md=None, dets=None):
     """ plan for 1D line scan by moving a motor between two positions and recording measurements at multiple points.
 
     Parameters:
@@ -168,6 +168,8 @@ def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None
         lineplan(5.0, 0, 10, 5, motor=sample_y)
 
     """
+    if motor is None:
+        motor = sample_y
 
     if dets is None:
         dets = []
@@ -188,8 +190,8 @@ def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None
         yield from bps.mv(ecal_y, 36)
         if ion_chamber.period.get()!= acq_time:
             yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
-    
+        ion_chamber.trigs_to_average = num_frame
+
     area_det = xpd_configuration['area_det']
 
     plan = bp.scan([area_det] + dets, motor, xstart, xend, xpoints, md=_md)
@@ -198,7 +200,7 @@ def lineplan(exp_time, xstart, xend, xpoints, motor=sample_y, md=None, dets=None
     yield from plan
 
 
-def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sample_x, motory=sample_y, md=None,
+def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=None, motory=None, md=None,
              dets=None):
 
     """ plan for 2D grid scan by moving two motors across specified ranges and collecting data using detectors.
@@ -219,6 +221,11 @@ def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sa
         md (dict, optional): Additional metadata to attach to the scan.
         dets (list, optional): List of extra detectors to record during the scan.
     """
+    if motorx is None:
+        motorx = sample_x
+
+    if motory is None:
+        motory=sample_y
 
     if dets is None:
         dets = []
@@ -238,8 +245,8 @@ def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sa
     if ion_chamber in dets:
         if ion_chamber.period.get()!= acq_time:
             yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
-    
+        ion_chamber.trigs_to_average = num_frame
+
     area_det = xpd_configuration['area_det']
 
     plan = bp.grid_scan([area_det]+dets, motory, ystart, ystop, ypoints, motorx, xstart, xstop, xpoints, True, md=_md)
@@ -248,7 +255,7 @@ def gridplan(exp_time, xstart, xstop, xpoints, ystart, ystop, ypoints, motorx=sa
     yield from plan
 
 
-def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, md=None, dets=None):
+def xyposplan(exp_time, posxlist, posylist, motorx=None, motory=None, md=None, dets=None):
     """ plan for a scan over a set of predefined x and y positions.
 
     Parameters:
@@ -267,6 +274,12 @@ def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, md
     # Input validation
     if len(posxlist) != len(posylist):
         raise ValueError("posxlist and posylist must have the same length")
+
+    if motorx is None:
+        motorx = sample_x
+
+    if motory is None:
+        motory=sample_y
 
     if dets is None:
         dets = []
@@ -289,7 +302,7 @@ def xyposplan(exp_time, posxlist, posylist, motorx=sample_x, motory=sample_y, md
         yield from bps.mv(ecal_y, 36)
         if ion_chamber.period.get()!= acq_time:
             yield from bps.mv(ion_chamber.period, acq_time)
-        ion_chamber.trigs_to_average = num_frame 
+        ion_chamber.trigs_to_average = num_frame
 
     plan = bp.list_scan([area_det]+dets, motorx, posxlist, motory, posylist, md=_md)
     plan = bpp.subs_wrapper(plan, LiveTable([motorx, motory]+dets))
@@ -404,13 +417,13 @@ def save_position_to_sample_list(smpl_list, pos_list, filename):
                 tags[ind][0] = tag_str + ',pos=' + str(pos_str[i])
             else:
                 tags[ind][0] = 'pos=' + str(pos_str[i])
-    
+
     #Flatten the updated tags
     tags = list(flatten(tags))
 
     # Create a new DataFrame with the updated tags
     new_f = pd.DataFrame({'User supplied tags': tags})
-    
+
     # Update the original DataFrame with the new tags
     f.update(new_f)
 
