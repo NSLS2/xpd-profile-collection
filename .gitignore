@@ -91,3 +91,6 @@ startup/.ipynb_checkpoints/
 
 # pdfstream config files:
 xpd*.ini
+# pixi environments
+.pixi/*
+!.pixi/config.toml
