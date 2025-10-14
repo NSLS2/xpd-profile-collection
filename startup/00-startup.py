@@ -122,6 +122,8 @@ def show_env():
 def whoami():
     try:
         print(f"\nLogged in to Tiled as: {c.context.whoami()['identities'][0]['id']}\n")
+    except NameError as e:
+        print("Tiled reading client not configured...")
     except TypeError as e:
         print("Not authenticated with Tiled! Please login...")
 
