@@ -80,7 +80,7 @@ nslsii.configure_base(
     magics=True,
     mpl=True,
     epics_context=False,
-    publish_documents_with_kafka="xpd",
+    publish_documents_with_kafka="xpd" if is_re_worker_active() else None,
     redis_url="info.xpd.nsls2.bnl.gov",
 )
 
