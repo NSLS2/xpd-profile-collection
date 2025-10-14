@@ -10,7 +10,8 @@ from tiled.client import from_profile
 
 ip = get_ipython()
 
-print(f"Loading {__file__} from {ip.profile_dir.startup_dir}.")
+
+print(f"Loading {__file__}...")
 
 logger = logging.getLogger("startup_profile")
 
