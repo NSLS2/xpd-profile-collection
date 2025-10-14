@@ -68,8 +68,9 @@ tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
 tiled_inserter = TiledInserter(tiled_writing_client)
-c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
-db = Broker(c)
+if not is_re_worker_active():
+    c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
+    db = Broker(c)
 
 nslsii.configure_base(
     get_ipython().user_ns,
