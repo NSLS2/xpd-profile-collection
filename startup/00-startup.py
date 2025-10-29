@@ -10,7 +10,8 @@ from tiled.client import from_profile
 
 ip = get_ipython()
 
-print(f"Loading {__file__} from {ip.profile_dir.startup_dir}.")
+
+print(f"Loading {__file__}...")
 
 logger = logging.getLogger("startup_profile")
 
@@ -67,8 +68,9 @@ tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
 tiled_inserter = TiledInserter(tiled_writing_client)
-c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
-db = Broker(c)
+if not is_re_worker_active():
+    c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
+    db = Broker(c)
 
 nslsii.configure_base(
     get_ipython().user_ns,
@@ -78,7 +80,7 @@ nslsii.configure_base(
     magics=True,
     mpl=True,
     epics_context=False,
-    publish_documents_with_kafka="xpd",
+    publish_documents_with_kafka="xpd" if not is_re_worker_active() else None,
     redis_url="info.xpd.nsls2.bnl.gov",
 )
 
@@ -120,6 +122,8 @@ def show_env():
 def whoami():
     try:
         print(f"\nLogged in to Tiled as: {c.context.whoami()['identities'][0]['id']}\n")
+    except NameError as e:
+        print("Tiled reading client not configured...")
     except TypeError as e:
         print("Not authenticated with Tiled! Please login...")
 
