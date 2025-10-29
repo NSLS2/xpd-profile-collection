@@ -102,9 +102,11 @@ from bluesky.callbacks import CollectThenCompute
 
 
 class ComputeWavelength(CollectThenCompute):
-    """
-    Example
-    -------
+    """The class to compute the length.
+
+    Examples
+    --------
+
     >>> cw = ComputeWavelgnth('tth_cal', 'some_detector', d_spacings, ns)
     >>> RE(scan(...), cw)
     """

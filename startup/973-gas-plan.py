@@ -54,7 +54,7 @@ def Tramp_gas_plan(detectors, gas_in, exp_time, Tstart, Tstop, Tstep,
     rga_masses: list, optional
         a list of rga masses will be appearing in a live table
 
-    Example:
+    Examples
     --------
     >>> plan = Tramp_gas_plan([pe1c, rga], 'He', 5, 300, 350, 5)
     >>> xrun(<sample ind>, plan)
@@ -108,7 +108,9 @@ def tseries_gas_plan(detectors, gas_in, exp_time, delay=1, num_exp=1,
     rga_masses: list, optional
         a list of rga masses appearing in a live table
 
-    Example:
+    Examples
+    --------
+
     >>> plan = tseries_gas_plan([pe1c, rga], 'He', 5, 10, 2)
     >>> xrun(<sample ind>, plan)
     """

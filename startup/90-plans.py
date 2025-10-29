@@ -21,8 +21,8 @@ def MED(init_gas, other_gas, minT, maxT, num_steps, num_steady, num_trans, num_l
     5. Switch the gas to `other_gas` and take `num_trans` acquisitions.
     6. Switch it back and take another `num_trans` acquisitions.
 
-    Example
-    -------
+    Examples
+    --------
     Set the gasses. They can be in any other, nothing to do with
     the order they are used in the plan.
     >>> gas.gas_list = ['O2', 'CO2']

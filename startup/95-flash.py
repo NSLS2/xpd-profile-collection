@@ -285,7 +285,7 @@ def flash_step(VIT_table, total_exposure, md, *,
                dets=None,
                delay=1,
                mm_mode='Current',
-               per_step=bps.trigger_and_read,
+               per_step=None,
                control_shutter=True):
     """
     Run a step-series of current/voltage.
@@ -335,6 +335,8 @@ def flash_step(VIT_table, total_exposure, md, *,
 
         defaults to True
     """
+    if per_step is None:
+        per_step = bps.trigger_and_read
     if total_exposure > delay:
         raise RuntimeError(
             f"You asked for total_exposure={total_exposure} "
@@ -429,7 +431,8 @@ def flash_ramp(start_I, stop_I, ramp_rate, voltage,
                dets=None,
                delay=1, mm_mode='Current',
                hold_time=0,
-               per_step=bps.trigger_and_read, control_shutter=True):
+               per_step=None,
+               control_shutter=True):
     """
     Run a current ramp
 
@@ -490,6 +493,8 @@ def flash_ramp(start_I, stop_I, ramp_rate, voltage,
 
         defaults to True
     """
+    if per_step is None:
+        per_step = bps.trigger_and_read
     if dets is None:
         dets = [xpd_configuration['area_det']]
     if total_exposure > delay:

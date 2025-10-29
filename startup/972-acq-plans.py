@@ -20,11 +20,7 @@ gas.gas_list = ['He', 'N2', 'CO2', 'Air']
 
 
 def gas_plan(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4', 'mass5', 'mass6']):
-    """
-    Example:
-
-    >>> RE(gas_plan(gas_in='He', masses_to_plot=['mass4', 'mass6']))
-    ----------
+    """The plan to switch gases.
 
     Parameters
     ----------
@@ -33,6 +29,11 @@ def gas_plan(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4', 'mass5', 'm
         These gas must be in `gas.gas_list` but they may be in any order.
     rga_masses: list, optional
         a list of rga masses appearing in a live table
+
+    Examples
+    --------
+
+    >>> RE(gas_plan(gas_in='He', rga_masses=['mass4', 'mass6']))
     """
     print('Warning: check the gas list!')
 
@@ -49,12 +50,8 @@ def gas_plan(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4', 'mass5', 'm
     yield from bp.count([gas.current_gas, rga])
 
 
-def gas_plan_with_detector(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4', 'mass5', 'mass6'], det=pe1c, exp_time=5, num_exp=1, delay=1):
-    """
-    Example:
-
-    >>> RE(gas_plan(gas_in='He', masses_to_plot=['mass4', 'mass6']))
-    ----------
+def gas_plan_with_detector(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4', 'mass5', 'mass6'], det=None, exp_time=5, num_exp=1, delay=1):
+    """The plan to switch gases with a detector.
 
     Parameters
     ----------
@@ -71,7 +68,15 @@ def gas_plan_with_detector(gas_in, rga_masses=['mass1', 'mass2', 'mass3', 'mass4
         number of exposures
     delay : float, optional
         delay between exposures in seconds
+
+    Examples
+    --------
+
+    >>> RE(gas_plan_with_detector(gas_in='He', rga_masses=['mass4', 'mass6']))
     """
+    if det is None:
+        det = pe1c
+
     print('Warning: check the gas list!')
 
     for i in range(1, 9+1):

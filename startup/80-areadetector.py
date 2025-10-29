@@ -140,13 +140,27 @@ class XPDFileStoreTIFFSquashing(FileStoreTIFFSquashing):
         shape = list(description[key]["shape"])
         shape[0] = self.get_frames_per_point()
         shape = tuple(shape)
-        description[key]["shape"] = shape
+        description[key].update({
+            "shape": shape,
+            "dtype_str": "<u2",
+        })
         return description
 
 
 class XPDTIFFPlugin(TIFFPlugin, XPDFileStoreTIFFSquashing,
                     FileStoreIterativeWrite):
-    pass
+
+    def update_paths(self):
+        directory_path_leaf = f"proposals/{RE.md['cycle']}/{RE.md['data_session']}/assets/{self.parent.name}/%Y/%m/%d/"
+        win_dir = directory_path_leaf.replace("/", "\\")
+        self.write_path_template = f"J:\\{win_dir}"
+        self.read_path_template = f"/nsls2/data/xpd-new/{directory_path_leaf}"
+
+    def stage(self):
+
+        # Update the read and write path here with information from RE.md
+        self.update_paths()
+        super().stage()
 
 
 class XPDHDF5Plugin(HDF5Plugin, FileStoreHDF5IterativeWrite):
@@ -164,12 +178,8 @@ class XPDPerkinElmer(PerkinElmerDetector):
              cam_name='cam',  # used to configure "tiff squashing"
              proc_name='proc',  # ditto
              read_attrs=[],
-             root='/nsls2/data/xpd-new/legacy/raw/')
+             root='/nsls2/data/xpd-new/')
 
-    # hdf5 = C(XPDHDF5Plugin, 'HDF1:',
-    #          write_path_template='G:/pe1_data/%Y/%m/%d/',
-    #          read_path_template='/direct/XF28ID2/pe1_data/%Y/%m/%d/',
-    #          root='/direct/XF28ID2/')
 
     proc = C(ProcessPlugin, 'Proc1:')
 
@@ -269,8 +279,6 @@ class ContinuousAcquisitionTrigger(BlueskyInterface):
 class PerkinElmerContinuous(ContinuousAcquisitionTrigger, XPDPerkinElmer):
     pass
 
-class PerkinElmerStandard(SingleTrigger, XPDPerkinElmer):
-    pass
 
 class PerkinElmerStandardV33(SingleTriggerV33, XPDPerkinElmer):
     pass
@@ -278,32 +286,10 @@ class PerkinElmerStandardV33(SingleTriggerV33, XPDPerkinElmer):
 class PerkinElmerMulti(MultiTrigger, XPDPerkinElmer):
     shutter = C(EpicsSignal, 'XF:28IDC-ES:1{Sh:Exp}Cmd-Cmd')
 
-class PerkinElmerContinuousStage(PerkinElmerContinuous):
-    stage_tries = 6
-    def stage(self):
-        for i in range(stage_tries):
-            try:
-                super().stage()
-            except TimeoutError as e:
-                if i == self.stage_tries-1:
-                    raise
-                print(e)
-
-    def unstage(self):
-        for i in range(stage_tries):
-            try:
-                super().unstage()
-            except TimeoutError as e:
-                if i == self.stage_tries-1:
-                    raise
-                print(e)
-
-
-
 
 # PE1/2/3 PV prefixes in one place:
+#pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE2}'
 pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
-#pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
 pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE2}'
 pe3_pv_prefix = 'XF:28IDD-ES:2{Det:PE3}'
 
@@ -312,7 +298,7 @@ pe3_pv_prefix = 'XF:28IDD-ES:2{Det:PE3}'
 
 pe1 = PerkinElmerStandardV33(pe1_pv_prefix, name='pe1', read_attrs=['tiff'])
 pe1m = PerkinElmerMulti(pe1_pv_prefix, name='pe1', read_attrs=['tiff'],
-                        trigger_cycle=[[('image', {shctl1: 1}),
+                       trigger_cycle=[[('image', {shctl1: 1}),
                                         ('dark_image', {shctl1: 0})]])
 pe1c = PerkinElmerContinuous(pe1_pv_prefix, name='pe1',
                              read_attrs=['tiff', 'stats1.total'],
@@ -349,12 +335,7 @@ class XPDPerkinElmerDEX(PerkinElmerDetector):
              cam_name='cam',  # used to configure "tiff squashing"
              proc_name='proc',  # ditto
              read_attrs=[],
-             root='/nsls2/data/xpd-new/legacy/raw/')
-
-    # hdf5 = C(XPDHDF5Plugin, 'HDF1:',
-    #          write_path_template='G:/pe1_data/%Y/%m/%d/',
-    #          read_path_template='/direct/XF28ID2/pe1_data/%Y/%m/%d/',
-    #          root='/direct/XF28ID2/')
+             root='/nsls2/data/xpd-new/')
 
     proc = C(ProcessPlugin, 'Proc1:')
 
@@ -407,8 +388,9 @@ for det in [
             pe2, pe2m, pe2c,
             #dexela1c
             ]:
-    det.tiff.read_path_template = f'/nsls2/data/xpd-new/legacy/raw/{det.name}_data/%Y/%m/%d/'
-    det.tiff.write_path_template = f'J:\\%Y\\%m\\%d\\'
+    # det.tiff.read_path_template = f'/nsls2/data/xpd-new/legacy/raw/{det.name}_data/%Y/%m/%d/'
+    # det.tiff.write_path_template = f'J:\\legacy\\raw\\{det.name}_data\\%Y\\%m\\%d\\'
+    det.tiff.update_paths()
     det.cam.bin_x.kind = 'config'
     det.cam.bin_y.kind = 'config'
     det.detector_type.kind = 'config'

@@ -28,7 +28,7 @@ ss_cam_x = EpicsMotor('XF:28IDD-ES:2{Cam:Mnt-Ax:X}Mtr', name = 'ss_cam_x')
 
 # RPI DIFFRACTOMETER motors ### Change th only after changing in other plans
 th = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:Th}Mtr', name='th')
-tth = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='tth')
+#tth = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='tth')
 diff_x = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:X}Mtr', name='diff_x')
 diff_y = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:Y}Mtr', name='diff_y')
 diff_tth_i = EpicsMotor('XF:28IDC-ES:1{Dif:1-Ax:2ThI}Mtr', name='diff_tth_i')
@@ -42,6 +42,9 @@ hrm_r = EpicsMotor('XF:28IDC-OP:1{Mono:HRM-Ax:R}Mtr', name='hrm_r')
 pe1_x = EpicsMotor('XF:28IDC-ES:1{Det:PE1-Ax:X}Mtr', name='pe1_x')
 pe1_z = EpicsMotor('XF:28IDC-ES:1{Det:PE1-Ax:Z}Mtr', name='pe1_z')
 
+# Pinhole motions
+pinhole_x = EpicsMotor('XF:28IDC-ES:1{PinHole:XRD-Ax:X}Mtr', name='pinhole_x')
+pinhole_y = EpicsMotor('XF:28IDC-ES:1{PinHole:XRD-Ax:Y}Mtr', name='pinhole_y')
 
 # MAD motions
 mad_pitch=EpicsMotor('XF:28IDC-ES:1{MAD:DMS-Ax:Pitch}Mtr', name='mad_pitch')

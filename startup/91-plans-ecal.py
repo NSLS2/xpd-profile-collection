@@ -133,7 +133,7 @@ def wavelength_from_theta(theta, d):
     return 2*d*np.sin(np.radians(theta))
 
 # New calibration scan plan
-def Ecal(wguess, detectors=[sc], motor=th_cal, coarse_step=.0012, coarse_nsteps=120, D='Si', detector_name='sc_chan1',
+def Ecal(wguess, detectors=None, motor=None, coarse_step=.0012, coarse_nsteps=120, D='Si', detector_name='sc_chan1',
               theta_offset=-35.26, nsigma_fine=.1, nsigma_range=5,
               output_file="result.csv", motor_type='th'):
     '''
@@ -175,11 +175,12 @@ def Ecal(wguess, detectors=[sc], motor=th_cal, coarse_step=.0012, coarse_nsteps=
             the coarse scan
         motor_type : str, optional
             the type of motor used, ether "th" (theta) or "tth"(two-theta)
-
-        Example
-        -------
-
     '''
+    if detectors is None:
+        detectors = [sc]
+    if motor is None:
+        motor = th_cal
+
     # an object for passing messages
     global myresult
     factors = dict(th=1, tth=2)
