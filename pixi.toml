@@ -49,6 +49,7 @@ bluesky-httpserver = "*"
 # systemd units
 qs-backend = "start-re-manager --profile-dir=."
 qs-server = "uvicorn --host localhost --port 60610 bluesky_httpserver.server:app"
+install-bluesky = "pip install -v git+https://github.com/mrakitin/bluesky.git@xpd-pdfstream"
 
 
 [feature.terminal.dependencies]
