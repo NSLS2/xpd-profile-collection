@@ -112,7 +112,6 @@ if is_re_worker_active():  # running in queueserver
     RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
     # RE.msg_hook = ts_msg_hook
 
-    configure_kafka_publisher(RE, beamline_name='xpd')
     RE.md.update(md)
 
     # insert header to db, either simulated or real
