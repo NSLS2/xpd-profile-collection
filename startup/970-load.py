@@ -74,7 +74,13 @@ print("loading beamline config")
 if is_re_worker_active():  # running in queueserver
     del Tramp
     # removing human input for automating queueserver setup by setting test=True
-    from xpdacq.xpdacq_conf import _load_beamline_config
+    # cache previous glbl state
+    
+    from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
+                                    _reload_glbl, _set_glbl,
+                                    _load_beamline_config)
+    reload_glbl_dict = _reload_glbl()
+    from xpdacq.glbl import glbl
     beamline_config = _load_beamline_config(glbl['blconfig_path'], test=True)
     # Metadata for both 'RE' and 'xrun':
     md = {}
