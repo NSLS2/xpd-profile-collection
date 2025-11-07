@@ -72,7 +72,6 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
 print("loading beamline config")
 
 if is_re_worker_active():  # running in queueserver
-    del Tlist
     del Tramp
     # removing human input for automating queueserver setup by setting test=True
     beamline_config = _load_beamline_config(glbl['blconfig_path'], test=True)
