@@ -159,7 +159,7 @@ else:  # running in bsui
     print('OK, ready to go.  To continue, follow the steps in the xpdAcq')
     print('documentation at http://xpdacq.github.io/xpdacq\n')
 
-
+from xpdacq.xpdacq import CustomizedRunEngine
 class MoreCustomizedRunEngine(CustomizedRunEngine):
     def __call__(self, plan, *args, **kwargs):
         super().__call__({}, plan, *args, **kwargs)
