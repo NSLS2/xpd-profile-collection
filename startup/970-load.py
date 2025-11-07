@@ -14,31 +14,31 @@
 #
 ##############################################################################
 import os
-from xpdacq.xpdacq_conf import (glbl_dict,
-                                _reload_glbl, _set_glbl,
-                                _load_beamline_config)
-
-# configure experiment device being used in current version
-if glbl_dict['is_simulation']:
-    from xpdacq.simulation import (xpd_pe1c, db, cs700, shctl1,
-                                   ring_current, fb)
-    pe1c = xpd_pe1c # alias
-
 if not is_re_worker_active():  # bsui
-    from xpdacq.xpdacq_conf import configure_device
-    configure_device(area_det=pe1c, shutter=shctl1,
-                     temp_controller=cs700, db="xpd",
-                     filter_bank=fb,
-                     ring_current=ring_current,
-                     robot=robot)
+    from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
+                                    _reload_glbl, _set_glbl,
+                                    _load_beamline_config)
 
-# cache previous glbl state
-reload_glbl_dict = _reload_glbl()
+    # configure experiment device being used in current version
+    if glbl_dict['is_simulation']:
+        from xpdacq.simulation import (xpd_pe1c, db, cs700, shctl1,
+                                       ring_current, fb)
+        pe1c = xpd_pe1c # alias
+
+        configure_device(area_det=pe1c, shutter=shctl1,
+                         temp_controller=cs700, db="xpd",
+                         filter_bank=fb,
+                         ring_current=ring_current,
+                         robot=robot)
+
+    # cache previous glbl state
+    reload_glbl_dict = _reload_glbl()
+
+    # reload beamtime
+    from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
+                                      _end_beamtime)
+
 from xpdacq.glbl import glbl
-
-# reload beamtime
-from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
-                                  _end_beamtime)
 
 import httpx
 from nslsii.sync_experiment import sync_experiment
@@ -95,27 +95,6 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
     return bt
 
 
-bt = start_xpdacq()
-if bt is not None:
-    print("INFO: Reload beamtime objects:\n{}\n".format(bt))
-if reload_glbl_dict is not None:
-    _set_glbl(glbl, reload_glbl_dict)
-
-# import necessary modules
-from xpdacq.xpdacq import *
-from xpdacq.beamtime import *
-from xpdacq.utils import import_sample_info
-
-# Metadata for both 'RE' and 'xrun':
-md = {}
-md['beamline_id'] = glbl['beamline_id']
-md['group'] = glbl['group']
-md['facility'] = glbl['facility']
-
-xrun = CustomizedRunEngine(None)
-xrun.md = RE.md
-xrun.md.update(md)
-
 print("loading beamline config")
 
 if is_re_worker_active():  # running in queueserver
@@ -123,43 +102,64 @@ if is_re_worker_active():  # running in queueserver
     del Tramp
     # removing human input for automating queueserver setup by setting test=True
     beamline_config = _load_beamline_config(glbl['blconfig_path'], test=True)
-else:
+else:  # running in bsui
+    bt = start_xpdacq()
+    if bt is not None:
+        print("INFO: Reload beamtime objects:\n{}\n".format(bt))
+    if reload_glbl_dict is not None:
+        _set_glbl(glbl, reload_glbl_dict)
+
+    # import necessary modules
+    from xpdacq.xpdacq import *
+    from xpdacq.beamtime import *
+    from xpdacq.utils import import_sample_info
+
+    # Metadata for both 'RE' and 'xrun':
+    md = {}
+    md['beamline_id'] = glbl['beamline_id']
+    md['group'] = glbl['group']
+    md['facility'] = glbl['facility']
+
+    xrun = CustomizedRunEngine(None)
+    xrun.md = RE.md
+    xrun.md.update(md)
+
     beamline_config = _load_beamline_config(glbl['blconfig_path'])
 
-print("loaded beamline config")
+    print("loaded beamline config")
 
-xrun.md['beamline_config'] = beamline_config
+    xrun.md['beamline_config'] = beamline_config
 
-# insert header to db, either simulated or real
-xrun.subscribe(tiled_inserter.insert, 'all')
-# xrun.subscribe(db.insert, 'all')
+    # insert header to db, either simulated or real
+    xrun.subscribe(tiled_inserter.insert, 'all')
+    # xrun.subscribe(db.insert, 'all')
 
-# We need to repeat it here for `xrun` as RE is not used here...
-nslsii.configure_kafka_publisher(xrun, "xpd")
+    # We need to repeat it here for `xrun` as RE is not used here...
+    nslsii.configure_kafka_publisher(xrun, "xpd")
 
-# robot command
-xrun.register_command('load_sample', _load_sample)
-xrun.register_command('unload_sample', _unload_sample)
+    # robot command
+    xrun.register_command('load_sample', _load_sample)
+    xrun.register_command('unload_sample', _unload_sample)
 
-if bt:
-    xrun.beamtime = bt
+    if bt:
+        xrun.beamtime = bt
 
-HOME_DIR = glbl['home']
-BASE_DIR = glbl['base']
+    HOME_DIR = glbl['home']
+    BASE_DIR = glbl['base']
 
-print('INFO: Initializing the XPD data acquisition environment\n')
-if os.path.isdir(HOME_DIR):
-    os.chdir(HOME_DIR)
-else:
-    os.chdir(BASE_DIR)
+    print('INFO: Initializing the XPD data acquisition environment\n')
+    if os.path.isdir(HOME_DIR):
+        os.chdir(HOME_DIR)
+    else:
+        os.chdir(BASE_DIR)
 
-from xpdacq.calib import *
+    from xpdacq.calib import *
 
-# analysis functions, only at beamline
-#from xpdan.data_reduction import *
+    # analysis functions, only at beamline
+    #from xpdan.data_reduction import *
 
-print('OK, ready to go.  To continue, follow the steps in the xpdAcq')
-print('documentation at http://xpdacq.github.io/xpdacq\n')
+    print('OK, ready to go.  To continue, follow the steps in the xpdAcq')
+    print('documentation at http://xpdacq.github.io/xpdacq\n')
 
 
 class MoreCustomizedRunEngine(CustomizedRunEngine):
