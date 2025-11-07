@@ -14,32 +14,6 @@
 #
 ##############################################################################
 import os
-if not is_re_worker_active():  # bsui
-    from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
-                                    _reload_glbl, _set_glbl,
-                                    _load_beamline_config)
-
-    # configure experiment device being used in current version
-    if glbl_dict['is_simulation']:
-        from xpdacq.simulation import (xpd_pe1c, db, cs700, shctl1,
-                                       ring_current, fb)
-        pe1c = xpd_pe1c # alias
-
-        configure_device(area_det=pe1c, shutter=shctl1,
-                         temp_controller=cs700, db="xpd",
-                         filter_bank=fb,
-                         ring_current=ring_current,
-                         robot=robot)
-
-    # cache previous glbl state
-    reload_glbl_dict = _reload_glbl()
-    from xpdacq.glbl import glbl
-
-    # reload beamtime
-    from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
-                                      _end_beamtime)
-
-
 import httpx
 from nslsii.sync_experiment import sync_experiment
 from pprint import pformat
@@ -103,6 +77,30 @@ if is_re_worker_active():  # running in queueserver
     # removing human input for automating queueserver setup by setting test=True
     beamline_config = _load_beamline_config(glbl['blconfig_path'], test=True)
 else:  # running in bsui
+    from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
+                                    _reload_glbl, _set_glbl,
+                                    _load_beamline_config)
+
+    # configure experiment device being used in current version
+    if glbl_dict['is_simulation']:
+        from xpdacq.simulation import (xpd_pe1c, db, cs700, shctl1,
+                                       ring_current, fb)
+        pe1c = xpd_pe1c # alias
+
+    configure_device(area_det=pe1c, shutter=shctl1,
+                     temp_controller=cs700, db=db,
+                     filter_bank=fb,
+                     ring_current=ring_current,
+                     robot=robot)
+
+    # cache previous glbl state
+    reload_glbl_dict = _reload_glbl()
+    from xpdacq.glbl import glbl
+
+    # reload beamtime
+    from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
+                                      _end_beamtime)
+
     bt = start_xpdacq()
     if bt is not None:
         print("INFO: Reload beamtime objects:\n{}\n".format(bt))
