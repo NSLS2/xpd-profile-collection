@@ -12,13 +12,13 @@ import time
 import itertools
 from bluesky.preprocessors import subs_decorator
 #### Funtions for tseries type run with shuuter control and triggering other Ophyd Devices
-from xpdacq.beamtime import open_shutter_stub, close_shutter_stub
 
 import bluesky.plans as bp
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
 def inner_shutter_control(msg):
+    from xpdacq.beamtime import open_shutter_stub, close_shutter_stub
     if msg.command == "trigger":
         def inner():
             yield from open_shutter_stub()
