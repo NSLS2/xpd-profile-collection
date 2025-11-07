@@ -98,6 +98,7 @@ if is_re_worker_active():  # running in queueserver
     from redis_json_dict import RedisJSONDict
     import redis
 
+    from xpdacq.beamtimeSetup import start_xpdacq
 
     RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
     # Manually set re.md to redis.
@@ -110,7 +111,7 @@ if is_re_worker_active():  # running in queueserver
     # insert header to db, either simulated or real
     RE.subscribe(tiled_inserter.insert, "all")
     
-    # RE.subscribe(db.insert, "all")
+    bt = start_xpdacq()
     if bt:
         RE.beamtime = bt
     try:
