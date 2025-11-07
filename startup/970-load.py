@@ -24,12 +24,13 @@ if glbl_dict['is_simulation']:
                                    ring_current, fb)
     pe1c = xpd_pe1c # alias
 
-
-configure_device(area_det=pe1c, shutter=shctl1,
-                 temp_controller=cs700, db="xpd",
-                 filter_bank=fb,
-                 ring_current=ring_current,
-                 robot=robot)
+if not is_re_worker_active():  # bsui
+    from xpdacq.xpdacq_conf import configure_device
+    configure_device(area_det=pe1c, shutter=shctl1,
+                     temp_controller=cs700, db="xpd",
+                     filter_bank=fb,
+                     ring_current=ring_current,
+                     robot=robot)
 
 # cache previous glbl state
 reload_glbl_dict = _reload_glbl()
