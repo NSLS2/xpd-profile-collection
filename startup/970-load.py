@@ -33,12 +33,12 @@ if not is_re_worker_active():  # bsui
 
     # cache previous glbl state
     reload_glbl_dict = _reload_glbl()
+    from xpdacq.glbl import glbl
 
     # reload beamtime
     from xpdacq.beamtimeSetup import (start_xpdacq, _start_beamtime,
                                       _end_beamtime)
 
-from xpdacq.glbl import glbl
 
 import httpx
 from nslsii.sync_experiment import sync_experiment
