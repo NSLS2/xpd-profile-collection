@@ -98,7 +98,8 @@ if is_re_worker_active():  # running in queueserver
     from redis_json_dict import RedisJSONDict
     import redis
 
-    from xpdacq.beamtimeSetup import start_xpdacq, configure_device
+    from xpdacq.beamtimeSetup import start_xpdacq
+    from xpdacq.xpdacq_conf import configure_device
     
     configure_device(area_det=pe1c, shutter=shctl1,
                     temp_controller=cs700, db='xpd',
