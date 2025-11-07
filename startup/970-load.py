@@ -98,7 +98,13 @@ if is_re_worker_active():  # running in queueserver
     from redis_json_dict import RedisJSONDict
     import redis
 
-    from xpdacq.beamtimeSetup import start_xpdacq
+    from xpdacq.beamtimeSetup import start_xpdacq, configure_device
+    
+    configure_device(area_det=pe1c, shutter=shctl1,
+                    temp_controller=cs700, db='xpd',
+                    filter_bank=fb,
+                    ring_current=ring_current,
+                    robot=robot)
 
     RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
     # Manually set re.md to redis.
