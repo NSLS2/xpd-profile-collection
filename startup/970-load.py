@@ -169,6 +169,13 @@ from nslsii import configure_kafka_publisher
 from bluesky.utils import ts_msg_hook
 from redis_json_dict import RedisJSONDict
 import redis
+from xpdacq.glbl import glbl
+
+# Metadata for both 'RE' and 'xrun':
+md = {}
+md['beamline_id'] = glbl['beamline_id']
+md['group'] = glbl['group']
+md['facility'] = glbl['facility']
 
 RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
 # Manually set re.md to redis.
