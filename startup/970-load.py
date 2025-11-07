@@ -14,7 +14,7 @@
 #
 ##############################################################################
 import os
-from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
+from xpdacq.xpdacq_conf import (glbl_dict,
                                 _reload_glbl, _set_glbl,
                                 _load_beamline_config)
 
