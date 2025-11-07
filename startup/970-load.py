@@ -113,6 +113,8 @@ if is_re_worker_active():  # running in queueserver
     
     bt = start_xpdacq()
     if bt:
+        print(bt)
+        RE.clear_suspenders()
         RE.beamtime = bt
     try:
         print(f"{RE.beamtime = }")
