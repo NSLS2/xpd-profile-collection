@@ -212,9 +212,9 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         # yield from bps.sleep(det1_time)
         yield from bps.create(name="scattering")
         reading = (yield from bps.read(det1))
-        print(f"reading = {reading}")
+        # print(f"reading = {reading}")
         # ret.update(reading)
-        yield from bps.save()
+        return (yield from bps.save())
     
     
     @bpp.stage_decorator([det1, det2])
@@ -241,8 +241,8 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         ## Start to collecting scattering
         return (yield from periodic_dark(scattering()))
         
-    # grand_plan = trigger_two_detectors()
-    grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', _md)
+    grand_plan = trigger_two_detectors()
+    # grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', _md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
