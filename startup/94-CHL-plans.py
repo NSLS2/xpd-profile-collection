@@ -12,7 +12,7 @@ def ct_dark(dets: list, exposure: float):
 # issue:
 #     To add: 
 #           1. close shutter
-#           2. Auto sbustract dark
+#           2. Auto sbustract dark (v)
 #           3. Metadata (v)
 #     To check: 
 #           1. configure detector (v)
@@ -213,6 +213,8 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         reading = (yield from bps.read(det1))
         # print(f"reading = {reading}")
         # ret.update(reading)
+        print('\nForce to close fast shutter in case ....\n')
+        yield from bps.mv(fs, 20)
         return (yield from bps.save())
     
     
@@ -241,8 +243,8 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         # return (yield from periodic_dark(scattering()))
         return (yield from scattering())
         
+    ## periodic_dark has to wrap a plan which is a complete run (where run_decorator is added).
     grand_plan = periodic_dark(trigger_two_detectors())
-    # grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', _md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
