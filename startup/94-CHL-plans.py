@@ -71,6 +71,40 @@ def _pre_plan(dets, exposure):
 
 
 
+def trigger_areaDet(dets, exposure, stream_name, sample_name, md):
+    _md = md or {}
+    _md['sample_name'] = sample_name
+    sp_md = yield from _pre_plan(dets, exposure)
+    sp_md["sp_plan_name"] = "trigger_areaDet",
+    _md.update(sp_md)
+
+    @bpp.stage_decorator(dets)
+    @bpp.run_decorator(md=_md)
+    def trigger_and_wait() -> MsgGenerator:
+        for det in dets:
+            ret = {}
+            yield from bps.trigger(det, wait=True)
+            yield from bps.create(name=stream_name)
+            reading = (yield from bps.read(det))
+            # yield from bps.read(Grid_X)
+            # print(f"reading = {reading}")
+            # ret.update(reading)
+            return (yield from bps.save())
+        
+    return (yield from periodic_dark(trigger_and_wait()))
+
+
+
+def scan_with_dark(dets, exposure, stream_name='primary', sample_name='test', md=None):
+    ## while passing plan as a generator, no need to add "yield from"
+    grand_plan = trigger_areaDet(dets, exposure, stream_name, sample_name, md)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+    return (yield from grand_plan)
+
+
+
 def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10, sample_type = 'test',
                     pump_list=None, precursor_list=None, mixer=None, note=None, **kwargs):
     """Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and then det1.
