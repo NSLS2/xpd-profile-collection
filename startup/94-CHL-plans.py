@@ -242,7 +242,7 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         return (yield from periodic_dark(scattering()))
         
     # grand_plan = trigger_two_detectors()
-    grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', {})
+    grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', _md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
