@@ -8,7 +8,7 @@ def ion_chamber_out(y=-10):
     #ecal_x.move(x)
     ecal_y.move(y)
 
-def takeone(sample, exp_time, num=1, delay_num=0, dets=[ion_chamber] ):
+def takeone(sample, exp_time, num=1, delay_num=0, dets=[] ):
     """ take one data, collect both det and ion_chamber data
 
     parameter:
@@ -309,7 +309,7 @@ def xyposplan(exp_time, posxlist, posylist, motorx=None, motory=None, md=None, d
     plan = bpp.plan_mutator(plan, inner_shutter_control)
     yield from plan
 
-def take_one_dark(sample, exp_time, dets=[ion_chamber]):
+def take_one_dark(sample, exp_time, dets=[]):
     """ take one data with dark image, then set dark window to 1000 minutes
 
     parameter:
