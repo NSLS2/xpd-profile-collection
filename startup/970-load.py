@@ -18,6 +18,8 @@ import httpx
 from nslsii.sync_experiment import sync_experiment
 from pprint import pformat
 
+from redis_json_dict import RedisJSONDict
+import redis
 
 def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], test=False, commissioning=False):
 
@@ -68,6 +70,10 @@ def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], tes
 
     return bt
 
+from xpdacq.xpdacq import CustomizedRunEngine
+class MoreCustomizedRunEngine(CustomizedRunEngine):
+    def __call__(self, plan, *args, **kwargs):
+        super().__call__({}, plan, *args, **kwargs)
 
 print("loading beamline config")
 
@@ -87,16 +93,10 @@ if is_re_worker_active():  # running in queueserver
     md['beamline_id'] = '28-ID-2'
     md['group'] = 'XPD'
     md['facility'] = 'NSLS-II'
-    
-    from xpdacq.xpdacq import CustomizedRunEngine
-    class MoreCustomizedRunEngine(CustomizedRunEngine):
-        def __call__(self, plan, *args, **kwargs):
-            super().__call__({}, plan, *args, **kwargs)
+
             
     from nslsii import configure_kafka_publisher
     from bluesky.utils import ts_msg_hook
-    from redis_json_dict import RedisJSONDict
-    import redis
 
     from xpdacq.beamtimeSetup import start_xpdacq
     from xpdacq.xpdacq_conf import configure_device
@@ -136,8 +136,9 @@ if is_re_worker_active():  # running in queueserver
         yield from RE.beamtime.scanplans["ct_60"].factory()
 
     RE.clear_suspenders()
-    
-else:  # running in bsui
+
+# running in bsui
+else:
     from xpdacq.xpdacq_conf import (glbl_dict, configure_device,
                                     _reload_glbl, _set_glbl,
                                     _load_beamline_config)
@@ -219,3 +220,31 @@ else:  # running in bsui
 
     print('OK, ready to go.  To continue, follow the steps in the xpdAcq')
     print('documentation at http://xpdacq.github.io/xpdacq\n')
+    
+    # RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
+    # # Manually set re.md to redis.
+    # RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
+    # # RE.msg_hook = ts_msg_hook
+
+    # RE.md.update(md)
+
+    # # insert header to db, either simulated or real
+    # RE.subscribe(tiled_inserter.insert, "all")
+    
+    # bt = start_xpdacq()
+    # if bt:
+    #     print(bt)
+    #     RE.clear_suspenders()
+    #     RE.beamtime = bt
+    # try:
+    #     print(f"{RE.beamtime = }")
+    # except RuntimeError as e:
+    #     print("=====================\n\n")
+    #     print(str(e))
+    #     print("=====================\n\n")
+
+    # def ct_1():
+    #     yield from RE.beamtime.scanplans["ct_1"].factory()
+
+    # def ct_60():
+    #     yield from RE.beamtime.scanplans["ct_60"].factory()
