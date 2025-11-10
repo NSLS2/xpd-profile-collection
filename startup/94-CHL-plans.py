@@ -1,5 +1,7 @@
 from xpdacq.beamtime import configure_area_det
 from xpdacq.xpdacq import periodic_dark
+from xpdacq.xpdacq import _inject_qualified_dark_frame_uid, _inject_calibration_md, _inject_analysis_stage
+import bluesky.preprocessors as bpp
 
 def ct_dark(dets: list, exposure: float):
     yield from periodic_dark(ct(dets, exposure))
@@ -201,7 +203,16 @@ def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10
         # yield from fluorescence()
 
         ## Start to collecting scattering
-        yield from periodic_dark(scattering())
-        
+        grand_plan = scattering()
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        yield from periodic_dark(grand_plan)
         
     yield from trigger_two_detectors()
+    
+    
+    
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
