@@ -3,6 +3,12 @@ from bluesky.utils import ts_msg_hook
 import bluesky.preprocessors as bpp
 import time
 import json
+
+from xpdacq.beamtime import configure_area_det
+from xpdacq.xpdacq import periodic_dark
+from xpdacq.xpdacq import _inject_qualified_dark_frame_uid, _inject_calibration_md, _inject_analysis_stage
+import bluesky.preprocessors as bpp
+
 # RE.msg_hook = ts_msg_hook
 
 
@@ -528,9 +534,11 @@ def xray_uvvis_plan3(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
         # yield from bps.sleep(det1_time)
         yield from bps.create(name="scattering")
         reading = (yield from bps.read(det1))
-        print(f"reading = {reading}")
+        # print(f"reading = {reading}")
         # ret.update(reading)
         yield from bps.save()
+        print('\nForce to close fast shutter in case ....\n')
+        yield from bps.mv(fs, 20)
     
     
     @bpp.stage_decorator([det1, det2])
@@ -554,44 +562,17 @@ def xray_uvvis_plan3(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
         yield from fluorescence()
 
         ## Start to collecting scattering
-        yield from periodic_dark(scattering())
+        return (yield from scattering())
         
         
-    yield from trigger_two_detectors()
+    ## periodic_dark has to wrap a plan which is a complete run (where run_decorator is added).
+    grand_plan = periodic_dark(trigger_two_detectors())
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+    return (yield from grand_plan)
 
 
-
-    # yield from trigger_two_detectors()
-
-    #     for i in range(num_flu):  # TODO: fix the number of triggers
-    #         yield from bps.trigger(det2, wait=True)
-
-    #         yield from bps.create(name="fluorescence")
-    #         reading = (yield from bps.read(det2))
-    #         # print(f"reading = {reading}")
-    #         ret.update(reading)
-    #         yield from bps.save()  # TODO: check if it's needed, most likely yes.
-    #         # yield from bps.sleep(2)
-
-    #     yield from bps.mv(LED, 'Low', UV_shutter, 'Low')
-    #     try:  
-    #         yield from stop_group([pump_list[-1]])
-    #         print(f'\nUV-Vis acquisition finished and stop infusing of {pump_list[-1].name} for toluene dilution\n')
-    #     except (TypeError):
-    #         print(f'\n{pump_list = }. No pump_list!! \n')
-        
-       
-    #     ## Start to collecting scattering
-    #     yield from bps.trigger(det1, wait=True)
-    #     # yield from bps.sleep(det1_time)
-    #     yield from bps.create(name="scattering")
-    #     reading = (yield from bps.read(det1))
-    #     print(f"reading = {reading}")
-    #     ret.update(reading)
-    #     yield from bps.save()
-
-
-    
 
 
 

@@ -9,9 +9,9 @@ def ct_dark(dets: list, exposure: float):
     
     
     
-# issue:
+# Issues on 2025/11/10 --> All fixed by CHL and HZ:
 #     To add: 
-#           1. close shutter
+#           1. close shutter (v)
 #           2. Auto sbustract dark (v)
 #           3. Metadata (v)
 #     To check: 
