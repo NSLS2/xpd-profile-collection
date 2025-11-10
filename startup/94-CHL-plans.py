@@ -106,7 +106,7 @@ def scan_with_dark(dets, exposure, stream_name='primary', sample_name='test', md
 
 
 
-def xray_uvvis_test(det1, exposure, *args, md=None, num_abs=10, num_flu=10, sample_type = 'test',
+def xray_uvvis_test(det1, det2, exposure, *args, md=None, num_abs=10, num_flu=10, sample_type = 'test',
                     pump_list=None, precursor_list=None, mixer=None, note=None, **kwargs):
     """Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and then det1.
         
@@ -217,8 +217,8 @@ def xray_uvvis_test(det1, exposure, *args, md=None, num_abs=10, num_flu=10, samp
         yield from bps.save()
     
     
-    # @bpp.stage_decorator([det1, det2])
-    @bpp.stage_decorator([det1])
+    @bpp.stage_decorator([det1, det2])
+    # @bpp.stage_decorator([det1])
     @bpp.run_decorator(md=_md)
     def trigger_two_detectors():  # TODO: rename appropriately
         ret = {}
@@ -242,7 +242,7 @@ def xray_uvvis_test(det1, exposure, *args, md=None, num_abs=10, num_flu=10, samp
         return (yield from periodic_dark(scattering()))
         
     # grand_plan = trigger_two_detectors()
-    grand_plan = trigger_areaDet(det1, exposure, 'scattering', 'test', {})
+    grand_plan = trigger_areaDet([det1], exposure, 'scattering', 'test', {})
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
