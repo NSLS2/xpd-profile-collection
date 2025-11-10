@@ -13,9 +13,9 @@ def ct_dark(dets: list, exposure: float):
 #     To add: 
 #           1. close shutter
 #           2. Auto sbustract dark
-#           3. Metadata
+#           3. Metadata (v)
 #     To check: 
-#           1. configure detector
+#           1. configure detector (v)
 
 
 
@@ -98,6 +98,7 @@ def trigger_areaDet(dets, exposure, stream_name, sample_name, md):
 def scan_with_dark(dets, exposure, stream_name='primary', sample_name='test', md=None):
     ## while passing plan as a generator, no need to add "yield from"
     grand_plan = trigger_areaDet(dets, exposure, stream_name, sample_name, md)
+    # grand_plan = trigger_areaDet(dets, exposure, stream_name, sample_name, md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
@@ -240,7 +241,8 @@ def xray_uvvis_test(det1, exposure, *args, md=None, num_abs=10, num_flu=10, samp
         ## Start to collecting scattering
         return (yield from periodic_dark(scattering()))
         
-    grand_plan = trigger_two_detectors()
+    # grand_plan = trigger_two_detectors()
+    grand_plan = trigger_areaDet(det1, exposure, 'scattering', 'test', {})
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
