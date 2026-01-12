@@ -134,7 +134,7 @@ xrun.subscribe(tiled_inserter.insert, 'all')
 # xrun.subscribe(db.insert, 'all')
 
 # We need to repeat it here for `xrun` as RE is not used here...
-nslsii.configure_kafka_publisher(xrun, "xpd")
+#nslsii.configure_kafka_publisher(xrun, "xpd")
 
 # robot command
 xrun.register_command('load_sample', _load_sample)
@@ -166,7 +166,7 @@ class MoreCustomizedRunEngine(CustomizedRunEngine):
         super().__call__({}, plan, *args, **kwargs)
 
 
-from nslsii import configure_kafka_publisher
+#from nslsii import configure_kafka_publisher
 from bluesky.utils import ts_msg_hook
 from redis_json_dict import RedisJSONDict
 import redis
@@ -176,7 +176,7 @@ RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the R
 RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
 # RE.msg_hook = ts_msg_hook
 
-configure_kafka_publisher(RE, beamline_name='xpd')
+#configure_kafka_publisher(RE, beamline_name='xpd')
 RE.md.update(md)
 
 # insert header to db, either simulated or real
