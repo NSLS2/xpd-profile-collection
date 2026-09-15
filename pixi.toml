@@ -18,7 +18,7 @@ ophyd = "==1.11.0"
 pyepics = "*"
 python = ">=3.12,<3.13"
 semver = ">=3.0.4,<4"
-tiled-client = "==0.2.9"
+tiled-client = "==0.2.16"
 # needed until we get ophyd-async packaged
 colorlog = ">=6.9.0,<7"
 xpdan = ">=0.8.2,<0.9"
@@ -59,6 +59,7 @@ botorch = "*"
 gpytorch = "*"
 "diffpy.pdffit2" = "*"
 "diffpy.structure" = "*"
+jupyterlab = "*"
 
 [feature.terminal.pypi-dependencies]
 blop = { git = "https://github.com/bluesky/blop.git", rev = "testing-xpd", extras = ["cpu"] }
