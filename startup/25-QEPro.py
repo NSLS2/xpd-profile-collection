@@ -542,13 +542,14 @@ class QEPro(Device):
                     else:
                         fp.write(f'{x_axis_data[i]},{dark_data[i]},{sample_data[i]},{output_data[i]}\n')
 
-from tiled.client.context import CannotPrompt
-try:
-    from tiled.client import from_profile
-    # tiled_client = from_profile("xpd-ldrd20-31")
-    tiled_client = from_profile("xpd")
-except CannotPrompt:
-    print("Tiled client cannot prompt for login. QEPro export to csv will not work.")
-except (NameError, ModuleNotFoundError):
-    pass
+if not is_re_worker_active():
+    from tiled.client.context import CannotPrompt
+    try:
+        from tiled.client import from_profile
+        # tiled_client = from_profile("xpd-ldrd20-31")
+        tiled_client = from_profile("xpd")
+    except CannotPrompt:
+        print("Tiled client cannot prompt for login. QEPro export to csv will not work.")
+    except (NameError, ModuleNotFoundError):
+        pass
 qepro = QEPro('XF:28ID2-ES{QEPro:Spec-1}:', name='QEPro', )
