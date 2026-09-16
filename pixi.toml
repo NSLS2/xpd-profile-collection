@@ -10,7 +10,7 @@ libc = "2.17"
 [feature.profile.dependencies]
 bluesky-base = "==1.15.1"
 bluesky-queueserver = "*"
-matplotlib-base= ">=3.9.3,<4"
+matplotlib-base = ">=3.9.3,<4"
 networkx = ">=3.4.2,<4"
 nslsii = "==0.11.9"
 numpy = "*"
@@ -55,6 +55,7 @@ qs-server = "uvicorn --host localhost --port 60610 bluesky_httpserver.server:app
 ipython = ">=9.5.0"
 pyside6 = "*"
 numpy = ">2"
+redis-py = "<6"
 
 
 [feature.terminal.tasks]
@@ -62,5 +63,5 @@ start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=."
 pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
 
 [environments]
-terminal = {features=["profile", "terminal"], solve-group="profile"}
-qs = {features=["profile", "qs"], solve-group="profile"}
+terminal = { features = ["profile", "terminal"], solve-group = "profile" }
+qs = { features = ["profile", "qs"], solve-group = "profile" }
