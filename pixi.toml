@@ -1,16 +1,14 @@
-[project]
+[workspace]
 channels = ["conda-forge"]
 name = "xpd-profile-collection"
-platforms = ["linux-64"]
-version = "2025-3.0"
-
-[system-requirements]
-libc = "2.17"
+platforms = [{ platform = "linux-64", glibc = "2.17" }]
+version = "2026-3.0"
+requires-pixi = ">=0.82.1"
 
 [feature.profile.dependencies]
 bluesky-base = "==1.14.4"
 bluesky-queueserver = "*"
-matplotlib-base= ">=3.9.3,<4"
+matplotlib-base = ">=3.9.3,<4"
 networkx = ">=3.4.2,<4"
 nslsii = "==0.11.4"
 numpy = "*"
@@ -33,6 +31,9 @@ blosc-hdf5-plugin = ">=1.0.1,<2"
 pydantic-numpy = ">=8.0.0,<9"
 p4p = ">=4.2.0,<5"
 epicscorelibs = ">=7.0.7.99.1.1,<8"
+ca-certificates = ">=2026.10.19"
+certifi = ">=2026.10.19"
+pip = ">=26.2.2"
 
 
 [feature.profile.pypi-dependencies]
@@ -62,6 +63,10 @@ numpy = ">2"
 start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=."
 pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
 
-[environments]
-terminal = {features=["profile", "terminal"], solve-group="profile"}
-qs = {features=["profile", "qs"], solve-group="profile"}
+[environments.terminal]
+features = ["profile", "terminal"]
+solve-group = "profile"
+
+[environments.qs]
+features = ["profile", "qs"]
+solve-group = "profile"
