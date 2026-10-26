@@ -69,9 +69,9 @@ class PdfEvaluationMode(str, Enum):
     """How PDF correlations and pdffit2 metrics are used by evaluation."""
 
     DISABLED = "disabled"
-    RAW_ONLY = "raw_only"
-    PDF_FIT_OBJECTIVES = "pdf_fit_objectives"
-    RAW_OBJECTIVES_PDF_FIT_TRACKED = "raw_objectives_pdf_fit_tracked"
+    RAW_ONLY = "raw_only"  ## only calculate Pearson correlation
+    PDF_FIT_OBJECTIVES = "pdf_fit_objectives"   ## do PPDfit2 fitting
+    RAW_OBJECTIVES_PDF_FIT_TRACKED = "raw_objectives_pdf_fit_tracked"  ## do nothing
 
 
 @dataclass(frozen=True)
