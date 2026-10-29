@@ -180,7 +180,6 @@ RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
 RE.md.update(md)
 
 # insert header to db, either simulated or real
-tiled_inserter = BufferingWrapper(tiled_inserter)  # in-process queue: RE never blocks
 RE.subscribe(tiled_inserter, "all")
 # RE.subscribe(db.insert, "all")
 if bt:

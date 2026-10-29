@@ -48,6 +48,7 @@ tiled_writing_client = from_profile(
 )["xpd"]["raw"]
 tiled_inserter = TiledInserter(tiled_writing_client,
     backup_directory=f"{TILED_BACKUP_ROOT}/raw")
+tiled_inserter = BufferingWrapper(tiled_inserter)  # in-process queue: RE never blocks
 if not is_re_worker_active():
     c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
     db = Broker(c)
