@@ -130,7 +130,7 @@ print("loaded beamline config")
 xrun.md['beamline_config'] = beamline_config
 
 # insert header to db, either simulated or real
-xrun.subscribe(tiled_inserter.insert, 'all')
+xrun.subscribe(tiled_inserter, 'all')
 # xrun.subscribe(db.insert, 'all')
 
 # We need to repeat it here for `xrun` as RE is not used here...
@@ -180,7 +180,8 @@ RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
 RE.md.update(md)
 
 # insert header to db, either simulated or real
-RE.subscribe(tiled_inserter.insert, "all")
+tiled_inserter = BufferingWrapper(tiled_inserter)  # in-process queue: RE never blocks
+RE.subscribe(tiled_inserter, "all")
 # RE.subscribe(db.insert, "all")
 if bt:
     RE.beamtime = bt
