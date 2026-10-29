@@ -6,10 +6,13 @@ import os
 import time as ttime
 from IPython import get_ipython
 from databroker import Broker
+from bluesky.callbacks.buffer import BufferingWrapper
+from bluesky_tiled_plugins import TiledInserter
 from tiled.client import from_profile
 
 ip = get_ipython()
 
+TILED_BACKUP_ROOT = "/nsls2/data/xpd/shared/config/bluesky/tiled_backup"
 
 print(f"Loading {__file__}...")
 
@@ -39,42 +42,21 @@ class ProposalIDPrompt(Prompts):
 ip = get_ipython()
 ip.prompts = ProposalIDPrompt(ip)
 
-class TiledInserter:
-    
-    def __init__(self, tiled_writing_client):
-        
-        self.tiled_writing_client = tiled_writing_client
-        
-    def insert(self, name, doc):
-        ATTEMPTS = 20
-        error = None
-        
-        for attempt in range(ATTEMPTS):
-            try:
-                self.tiled_writing_client.post_document(name, doc)
-            except Exception as exc:
-                print("Document saving failure:", repr(exc))
-                error = exc
-            else:
-                break
-            ttime.sleep(2)
-        else:
-            # Out of attempts
-            raise error
-
-
 # Define tiled catalog
 tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
-tiled_inserter = TiledInserter(tiled_writing_client)
+tiled_inserter = TiledInserter(
+    tiled_writing_client,
+    "xpd",
+    backup_directory=f"{TILED_BACKUP_ROOT}/raw")
+tiled_inserter = BufferingWrapper(tiled_inserter)  # in-process queue: RE never blocks
 if not is_re_worker_active():
     c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
     db = Broker(c)
 
 nslsii.configure_base(
     get_ipython().user_ns,
-    tiled_inserter,
     pbar=True,
     bec=True,
     magics=True,
