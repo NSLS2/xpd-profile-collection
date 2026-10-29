@@ -46,7 +46,9 @@ ip.prompts = ProposalIDPrompt(ip)
 tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
-tiled_inserter = TiledInserter(tiled_writing_client,
+tiled_inserter = TiledInserter(
+    tiled_writing_client,
+    "xpd",
     backup_directory=f"{TILED_BACKUP_ROOT}/raw")
 tiled_inserter = BufferingWrapper(tiled_inserter)  # in-process queue: RE never blocks
 if not is_re_worker_active():
