@@ -70,3 +70,7 @@ solve-group = "profile"
 [environments.qs]
 features = ["profile", "qs"]
 solve-group = "profile"
+
+[pypi-dependencies]
+autoencoder-pdf = { path = "/nsls2/data/xpd-new/legacy/processed/LDRD_tjb/pkgs/autoencoder-pdf" }
+xpd-tools = { path = "/nsls2/data/xpd-new/legacy/processed/LDRD_tjb/pkgs/xpd-tools" }
