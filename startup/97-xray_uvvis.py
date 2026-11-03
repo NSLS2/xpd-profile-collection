@@ -736,6 +736,8 @@ def steady_state_flow(
 # Acquisition plan
 # ---------------------------------------------------------------------------
 
+def uvvis_acquire():
+    pass
 
 def xray_uvvis_acquire(
     suggestions: list[dict],
