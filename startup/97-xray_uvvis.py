@@ -736,8 +736,8 @@ def steady_state_flow(
 # Acquisition plan
 # ---------------------------------------------------------------------------
 
-def uvvis_acquire():
-    pass
+from xpd_tools.optimization.plans import create_uvvis_plan
+uvvis_acquire = create_uvvis_plan()
 
 def xray_uvvis_acquire(
     suggestions: list[dict],
