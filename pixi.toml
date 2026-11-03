@@ -37,8 +37,6 @@ pip = ">=26.2.2"
 
 [feature.profile.pypi-dependencies]
 ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
-autoencoder-pdf = { path = "/nsls2/data/xpd-new/legacy/processed/LDRD_tjb/pkgs/autoencoder-pdf" }
-xpd-tools = { path = "/nsls2/data/xpd-new/legacy/processed/LDRD_tjb/pkgs/xpd-tools" }
 
 [feature.qs.dependencies]
 bluesky-queueserver = "*"

@@ -736,8 +736,125 @@ def steady_state_flow(
 # Acquisition plan
 # ---------------------------------------------------------------------------
 
-from xpd_tools.optimization.plans import create_uvvis_plan
-uvvis_acquire = create_uvvis_plan()
+def uvvis_acquire(
+    suggestions: list[dict],
+    actuators,
+    sensors=None,
+    md=None,
+    *,
+    flow_config: FlowConfig | None = None,
+    xray_config: XrayConfig | None = None,
+    wash_config: WashConfig | None = None,
+    quality_config: QualityConfig | None = None,
+):
+    # Merge caller overrides with module-level defaults
+    flow: FlowConfig = {**DEFAULT_FLOW_CONFIG, **(flow_config or {})}
+    xray: XrayConfig = {**DEFAULT_XRAY_CONFIG, **(xray_config or {})}
+    wash: WashConfig = {**DEFAULT_WASH_CONFIG, **(wash_config or {})}
+    quality: QualityConfig = {**DEFAULT_QUALITY_CONFIG, **(quality_config or {})}
+
+    # Unpack for readability
+    syringe_list = flow["syringe_list"]
+    syringe_mater_list = flow["syringe_mater_list"]
+    target_vol_list = flow["target_vol_list"]
+    set_target_list = flow["set_target_list"]
+    rate_unit = flow["rate_unit"]
+    mixer_lengths_cm = flow["mixer_lengths_cm"]
+    resident_t_ratio = flow["resident_t_ratio"]
+    precursor_list = flow["precursor_list"]
+    precursor_prefix_list = flow["precursor_prefix_list"]
+    post_dilute = flow["post_dilute"]
+    dof_to_pump = flow["dof_to_pump"]
+    dilute_pump_name = flow["dilute_pump_name"]
+    post_dilute_ratio = flow["post_dilute_ratio"]
+    post_dilute_wait_sec = flow["post_dilute_wait_sec"]
+
+    do_xray = xray["do_xray"]
+    xray_exposure = xray["exposure"]
+    xray_frame_acq_time = xray["frame_acq_time"]
+    xray_stream_name = xray["stream_name"]
+    xray_no_dark = xray["no_dark"]
+
+    do_wash = wash["do_wash"]
+
+    use_good_bad = quality["use_good_bad"]
+    good_target = quality["good_target"]
+    max_bad = quality["max_bad"]
+    num_abs = quality["num_abs"]
+    num_flu = quality["num_flu"]
+
+    if len(suggestions) > 1:
+        raise RuntimeError(
+            f"This plan expects only 1 suggestion but got {len(suggestions)}"
+        )
+    suggestion = suggestions[0]
+    
+    # Extract rates from suggestion — DOF names like "infusion_rate_CsPb"
+    dof_names=[]
+    for n in precursor_prefix_list:
+        for k in suggestion.keys():
+            if n in k:
+                dof_names.append(k)
+                
+    # dof_names = sorted(k for k in suggestion.keys() if k.startswith("infusion_rate"))
+    rate_list = [float(suggestion[name]) for name in dof_names]
+
+    # Resolve pump devices
+    pump_list = _resolve_pumps_from_dofs(dof_names, dof_to_pump)
+
+    sample_type = _make_sample_name(rate_list, precursor_prefix_list)
+
+    # Build metadata — include full resolved configs for reproducibility
+    detectors_list = ["qepro"]
+    
+    _md = {
+        "sample_type": sample_type,
+        "sample_name": sample_type,
+        "infuse_rates": rate_list,
+        "dof_names": dof_names,
+        "precursors": precursor_list[: len(pump_list)],
+        "pumps": [p.name for p in pump_list],
+        "detectors": detectors_list,
+    }
+    _md.update(md or {})
+    _md.update(sp_md)
+
+    # Quality monitoring
+    monitor = (
+        PLQualityMonitor(qepro, stream_name="fluorescence") if use_good_bad else None
+    )
+    # Only need descriptor and event documents
+    subs = {"descriptor": [monitor], "event": [monitor]} if monitor else {}
+
+    # Determine which detectors to stage
+    stage_devices = [qepro, pe1c] if do_xray else [qepro]
+
+    dilute_pump = _resolve_pumps(dilute_pump_name) if post_dilute else None
+    
+    # Acquisition plan
+    @bpp.subs_decorator(subs)
+    @bpp.set_run_key_decorator("uvvis_acquire")
+    @bpp.baseline_decorator(pump_list)
+    @bpp.stage_decorator(stage_devices)
+    @bpp.run_decorator(md=_md)
+    
+    def acquisition():
+        
+        # UV-Vis: fluorescence
+        yield from _pl_with_quality_gate(qepro, monitor, num_flu, good_target, max_bad)
+        
+        # UV-Vis: absorbance
+        yield from measure_absorbance(qepro, num_abs)
+        
+        # Turn off LED and UV shutter before x-ray (and as general cleanup)
+        yield from bps.mv(LED, "Low", UV_shutter, "Low")
+        
+        # Turn off dilute pump after Uv-Vis to save solvent
+        if post_dilute:
+            yield from stop_group([dilute_pump[-1]])
+            ultra1.stop_pump()
+            print(f"\nUv-Vis measurement finished. Turn off {dilute_pump_name[-1] = }\n")
+
 
 def xray_uvvis_acquire(
     suggestions: list[dict],
