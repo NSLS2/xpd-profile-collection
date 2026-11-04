@@ -188,7 +188,7 @@ def uvvis_acquire(
             rate_unit=rate_unit,
         )
 
-    yield from stop_group(wash_pumps + pump_list + dilute_pump)
+    # yield from stop_group(wash_pumps + pump_list + dilute_pump)
     return uid
 
 
