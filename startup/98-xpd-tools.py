@@ -153,6 +153,9 @@ def _get_bound_plan(plan_name: str, config: dict):
 
 def uvvis_acquire(suggestions, actuators, sensors=None, config=None, md=None):
     """UV-Vis optimization acquisition plan (xpd-tools config-passing path)."""
+    
+    _logger.info("ARRIVING config experiment.source=%r", (config or {}).get("experiment", {}).get("sources"))
+    
     if config is None:
         raise ValueError(
             "uvvis_acquire requires a 'config' kwarg containing build_agent.to_config(). "
