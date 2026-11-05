@@ -1,14 +1,15 @@
 """ Register XPD tools plans into the queueserver namespace"""
 
-''' from xpd_tools.optimization.plans import (
+from __future__ import annotations
+
+""" from xpd_tools.optimization.plans import (
 	create_uvvis_plan,
 	create_xray_plan,
 	create_xray_screened_plan,
 	create_xray_uvvis_plan
- )'''
-
-
-"""
+ )
+ 
+ 
 Hack method to be replaced with XPD-tools managed plans.
 
 Done Nov 5 by TB to be able to run experiments.
@@ -56,7 +57,7 @@ XPD_HALIDE_MOCK  (optional, default "0")
     Set to "1" to use simulated devices instead of live EPICS connections.
 """
 
-from __future__ import annotations
+
 
 import hashlib
 import json
