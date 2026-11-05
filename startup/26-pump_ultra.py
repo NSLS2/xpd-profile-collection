@@ -346,7 +346,7 @@ class syrng_ultra(Device):
         # Wait for infusing report
         infusing = False
         for _ in range(50):
-            if self.status.get() == "Infusing":
+            if self.status.get() in ("Infusing", "INFUSING"):
                 infusing = True
                 break
             yield from bps.sleep(0.1)

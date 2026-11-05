@@ -381,7 +381,7 @@ def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
             rate = infuse_rates[i]
             rate_unit = infuse_rate_unit[i]
             unit_const = vol_unit_converter(v0=rate_unit[:2], v1='ul')/t_unit_converter(t0=rate_unit[3:], t1='min')
-            if pump_status[i] == "Infusing":
+            if pump_status[i] in ("Infusing", "INFUSING"):
                 _is_infusing = 1.0
             else:
                 _is_infusing = 0.0
