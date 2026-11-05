@@ -34,6 +34,8 @@ epicscorelibs = ">=7.0.7.99.1.1,<8"
 ca-certificates = ">=2026.10.19"
 certifi = ">=2026.10.19"
 pip = ">=26.2.2"
+# xpdconf and xpdacq import pkg_resources, which setuptools 82 removed
+setuptools = "<82"
 
 
 [feature.profile.pypi-dependencies]

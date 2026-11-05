@@ -1,9 +1,12 @@
 from random import sample
+from collections.abc import Sequence
 
-from xpdacq.beamtime import configure_area_det
+from xpdacq.beamtime import configure_area_det, open_shutter_stub, close_shutter_stub
 from xpdacq.xpdacq import periodic_dark
 from xpdacq.xpdacq import _inject_qualified_dark_frame_uid, _inject_calibration_md, _inject_analysis_stage
 import bluesky.preprocessors as bpp
+from bluesky.protocols import Readable
+
 
 def ct_dark(dets: list, exposure: float):
     return (yield from periodic_dark(ct(dets, exposure)))
@@ -22,7 +25,7 @@ def ct_dark(dets: list, exposure: float):
 
 
 ## A pre-plan to configure the area detector
-def _pre_plan(dets, exposure, frame_acq_time=None):
+def _pre_plan(dets: Sequence[Readable], exposure, frame_acq_time=None):
     """Handle detector exposure time + xpdan required metadata"""
 
     try:
@@ -89,7 +92,7 @@ def _pre_plan(dets, exposure, frame_acq_time=None):
 
 
 
-def trigger_areaDet(dets, exposure, stream_name, md, no_dark, jogging=[], frame_acq_time=None, user_config={}):
+def trigger_areaDet(dets: Sequence[Readable], exposure, stream_name, md, no_dark, jogging=[], frame_acq_time=None, user_config={}):
     _md = md or {}
     # _md['sample_name'] = sample_name
     sp_md = yield from _pre_plan(dets, exposure, frame_acq_time=frame_acq_time)
@@ -151,10 +154,14 @@ def trigger_areaDet(dets, exposure, stream_name, md, no_dark, jogging=[], frame_
     
     if not no_dark:
         yield from periodic_dark(trigger_and_wait())
+        yield from bps.mv(fs, 20)
+        
     else:
-        yield from open_shutter_stub()
+        # yield from open_shutter_stub()
+        yield from bps.mv(fs, -20)
         yield from trigger_and_wait()
-        yield from close_shutter_stub()
+        # yield from close_shutter_stub()
+        yield from bps.mv(fs, 20)
         
 
 
@@ -165,7 +172,8 @@ from xpdacq.xpdacq import (_inject_qualified_dark_frame_uid,
                            _auto_load_calibration_file, 
 )
 
-def scan_with_dark(dets: list, 
+
+def scan_with_dark(dets: Sequence[Readable], 
                    exposure: float=0.1, 
                    sample_ID: int=0, 
                    sample_info: dict={}, 
@@ -286,74 +294,24 @@ RE.register_command('inject_xrun_md', _inject_xrun_md)
 
 
 
-from ophyd.sim import det, noisy_det
-def show_msg_command(dets: list=[det], 
-                     stream_name: str='primary', 
-                     md: dict={},):
-    _md = md or {}
-    @bpp.stage_decorator(dets)
-    @bpp.run_decorator(md=_md)
-    def trigger_and_wait() -> MsgGenerator:
-        for det in dets:
-            yield from inject_xrun_md()
-            yield from bps.trigger(det, wait=True)
-            yield from bps.create(name=stream_name)
-            yield from bps.read(det)
-            # print(f"\n\n===== {msg.command = } =====\n\n")
+# from ophyd.sim import noisy_det
+# def show_msg_command(dets: list=[noisy_det], 
+#                      stream_name: str='primary', 
+#                      md: dict={},):
+#     _md = md or {}
+#     @bpp.stage_decorator(dets)
+#     @bpp.run_decorator(md=_md)
+#     def trigger_and_wait() -> MsgGenerator:
+#         for det in dets:
+#             yield from inject_xrun_md()
+#             yield from bps.trigger(det, wait=True)
+#             yield from bps.create(name=stream_name)
+#             yield from bps.read(det)
+#             # print(f"\n\n===== {msg.command = } =====\n\n")
     
-    yield from trigger_and_wait()
-    for msg in trigger_and_wait():
-        print(f"\n\n===== {msg.command = } =====\n\n")
-
-
-def periodic_dark_02(plan):
-    """
-    a plan wrapper that takes a plan and inserts `take_dark`
-
-    The `take_dark` plan is inserted on the fly before the beginning of
-    any new run after a period of time defined by glbl['dk_window'] has passed.
-    """
-    need_dark = True
-
-    def insert_take_dark(msg):
-        nonlocal need_dark
-        qualified_dark_uid = _validate_dark(expire_time=glbl["dk_window"])
-        area_det = xpd_configuration["area_det"]
-
-        if (not need_dark) and (not qualified_dark_uid):
-            need_dark = True
-        if need_dark and (not qualified_dark_uid) and msg.command == "inject_xrun_md" and (
-            "dark_frame" not in msg.kwargs
-        ):
-            # We are about to start a new 'run' (e.g., a count or a scan).
-            # Insert a dark frame run first.
-            need_dark = False
-            # Annoying detail: the detector was probably already staged.
-            # Unstage it (if it wasn't staged, nothing will happen) and
-            # then take_dark() and then re-stage it.
-            return (
-                bpp.pchain(
-                    bps.unstage(area_det),
-                    take_dark(),
-                    bps.stage(area_det),
-                    bpp.single_gen(msg),
-                    open_shutter_stub(),
-                ),
-                None,
-            )
-        elif msg.command == "inject_xrun_md" and "dark_frame" not in msg.kwargs:
-            return (
-                bpp.pchain(
-                    bpp.single_gen(msg),
-                    open_shutter_stub()
-                ),
-                None,
-            )
-        else:
-            # do nothing if (not need_dark)
-            return None, None
-
-    return (yield from bpp.plan_mutator(plan, insert_take_dark))
+#     yield from trigger_and_wait()
+#     for msg in trigger_and_wait():
+#         print(f"\n\n===== {msg.command = } =====\n\n")
 
 
 
@@ -478,6 +436,7 @@ def _inner_scattering(dets, exposure, frame_acq_time=0.2, stream_name='primary',
         
         for det in dets:
             
+            yield from bps.mv(fs, -20)
             nonlocal jogging
             if len(jogging) == 3:
                 print(f'Star to jog using {jogging[0].name} from {jogging[1]} mm to {jogging[2]} mm')
@@ -491,6 +450,7 @@ def _inner_scattering(dets, exposure, frame_acq_time=0.2, stream_name='primary',
             # yield from bps.read(motors[1])
             # yield from bps.read(motors[2])
             yield from bps.save()
+            yield from bps.mv(fs, 20)
     
     # grand_plan = trigger_and_wait()
     
@@ -514,8 +474,8 @@ def _inner_scattering(dets, exposure, frame_acq_time=0.2, stream_name='primary',
 
 
 
-def xray_uvvis_RE(det1: ophyd.Device, 
-                  det2: ophyd.Device, 
+def xray_uvvis_RE(det1, 
+                  det2, 
                   exposure: float, 
                   *args, 
                   frame_acq_time: float=0.2, 
@@ -524,7 +484,7 @@ def xray_uvvis_RE(det1: ophyd.Device,
                   num_flu: int=10, 
                   stream_name: str='scattering', 
                   sample_type: str = 'test', 
-                  pump_list: list=None, 
+                  pump_list = None, 
                   precursor_list: list=None, 
                   mixer: list=None, 
                   note: dict=None, 
@@ -539,6 +499,7 @@ def xray_uvvis_RE(det1: ophyd.Device,
     Args:
         det1 (ophyd.Device): xray detector (example: pe1c)
         det2 (ophyd.Device): Uv-Vis detector (example: qepro)
+        exposure (float): total exposure time for the area detector (det1)
         frame_acq_time (float, optional): frame acquisition time. Defaults to 0.2.
         md (dict, optional): metadata.
         num_abs (int, optional): numbers of absorption spectra
@@ -550,10 +511,19 @@ def xray_uvvis_RE(det1: ophyd.Device,
         note (str, optional): addtional info. Defaults to None.
     """
     
-    # print(f'\n===== {[det1.name, det2.name, 'xxxxx'] = } =====\n')
+    print(f'\n===== {[det1.name, det2.name, 'xxxxx'] = } =====\n')
+    print(f'\n===== {[pump.name for pump in pump_list] = } =====\n')
     
     if (pump_list != None and precursor_list != None):
-        _md = {"pumps" : [pump.name for pump in pump_list],
+        
+        try:
+            pumps = [pump.name for pump in pump_list]
+            dets = [det1.name, det2.name]
+        except AttributeError:
+            pumps = [str(pump) for pump in pump_list]
+            dets = [str(det1), str(det2)]
+
+        _md = {"pumps" : pumps,
                "precursors" : precursor_list,
                "infuse_rate" : [pump.read_infuse_rate.get() for pump in pump_list],
                "infuse_rate_unit" : [pump.read_infuse_rate_unit.get() for pump in pump_list],
@@ -562,18 +532,18 @@ def xray_uvvis_RE(det1: ophyd.Device,
                "mixer": mixer,
                "sample_type": sample_type,
                "sample_name": sample_type,
-               "detectors_in_use": [det1.name, det2.name], 
+               "detectors_in_use": dets, 
                "note" : note if note else "None"}
         _md.update(md or {})
 
     sp_md = yield from _pre_plan([det1], exposure, frame_acq_time=frame_acq_time)
 
     if (pump_list == None and precursor_list == None):
-        _md = { #"uvvis" :[det2.integration_time.get(), det2.num_spectra.get(), det2.buff_capacity.get()],
+        _md = { "uvvis" :[det2.integration_time.get(), det2.num_spectra.get(), det2.buff_capacity.get()],
                 "mixer": ['exsitu measurement'],
                 "sample_type": sample_type, 
                 "sample_name": sample_type,
-                #"detectors": [det1.name, det2.name], 
+                "detectors_in_use": dets, 
                 "note" : note if note else "None"}
         _md.update(md or {})
         
@@ -600,6 +570,11 @@ def xray_uvvis_RE(det1: ophyd.Device,
         ## Start to collecting scattering
         yield from _inner_scattering([det1], exposure, frame_acq_time=frame_acq_time, stream_name=stream_name, no_dark=no_dark, **kwargs)
         
+        ## make sure the fast shutter is closed at the end of the run
+        # yield from close_shutter_stub()
+        # yield from bps.mv(fs, 20)
+        
+        
     # periodic_dark has to wrap a plan which is a complete run (where run_decorator is added).
     grand_plan = periodic_dark(trigger_two_detectors())
     grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
@@ -607,4 +582,7 @@ def xray_uvvis_RE(det1: ophyd.Device,
     grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
     return (yield from grand_plan)
     # yield from trigger_two_detectors()
+    
+
+    
     
