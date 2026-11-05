@@ -172,6 +172,7 @@ def read_qepro_by_stream(uid, stream_name='primary', data_agent='tiled'):
             from tiled.client import from_profile
             # tiled_client = from_profile("xpd-ldrd20-31")
             tiled_client = from_profile("xpd")
+            tiled_client.context.http_client.headers['tiled-qos'] = 'acquisition'
             
         run = tiled_client[uid]
         meta = run.metadata
@@ -490,6 +491,7 @@ def read_qepro_from_tiled(uid):
         from tiled.client import from_profile
         # tiled_client = from_profile("xpd-ldrd20-31")
         tiled_client = from_profile("xpd")  
+        tiled_client.context.http_client.headers['tiled-qos'] = 'acquisition'
     
     run = tiled_client[uid]
     ds = run.primary.read()

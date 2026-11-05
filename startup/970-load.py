@@ -43,10 +43,12 @@ import httpx
 from nslsii.sync_experiment import sync_experiment
 from pprint import pformat
 
+# TODO: Remove this once the fix is merged upstream
+os.environ["REDIS_HOST"] = "xf28id2-xpd-redis1.nsls2.bnl.gov"
 
 def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], test=False, commissioning=False):
 
-    sync_experiment(proposal_num, "XPD")
+    sync_experiment(proposal_num, "xpd", redis_ssl=True)
 
     # Copied from NSLS2/start-experiment:
     nslsii_api_client = httpx.Client(base_url="https://api.nsls2.bnl.gov")
@@ -163,40 +165,41 @@ print('documentation at http://xpdacq.github.io/xpdacq\n')
 
 class MoreCustomizedRunEngine(CustomizedRunEngine):
     def __call__(self, plan, *args, **kwargs):
-        super().__call__({}, plan, *args, **kwargs)
+        return super().__call__({}, plan, *args, **kwargs)
+        # return tuple(self._run_start_uids)
 
 
-#from nslsii import configure_kafka_publisher
-from bluesky.utils import ts_msg_hook
-from redis_json_dict import RedisJSONDict
-import redis
+# #from nslsii import configure_kafka_publisher
+# from bluesky.utils import ts_msg_hook
+# from redis_json_dict import RedisJSONDict
+# import redis
 
-RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
-# Manually set re.md to redis.
-RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
-# RE.msg_hook = ts_msg_hook
+# RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
+# # Manually set re.md to redis.
+# RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
+# # RE.msg_hook = ts_msg_hook
 
-#configure_kafka_publisher(RE, beamline_name='xpd')
-RE.md.update(md)
+# #configure_kafka_publisher(RE, beamline_name='xpd')
+# RE.md.update(md)
 
-# insert header to db, either simulated or real
-RE.subscribe(tiled_inserter.insert, "all")
-# RE.subscribe(db.insert, "all")
-if bt:
-    RE.beamtime = bt
-try:
-    print(f"{RE.beamtime = }")
-except RuntimeError as e:
-    print("=====================\n\n")
-    print(str(e))
-    print("=====================\n\n")
+# # insert header to db, either simulated or real
+# RE.subscribe(tiled_inserter.insert, "all")
+# # RE.subscribe(db.insert, "all")
+# if bt:
+#     RE.beamtime = bt
+# try:
+#     print(f"{RE.beamtime = }")
+# except RuntimeError as e:
+#     print("=====================\n\n")
+#     print(str(e))
+#     print("=====================\n\n")
 
-def ct_1():
-    yield from RE.beamtime.scanplans["ct_1"].factory()
-
-
-def ct_60():
-    yield from RE.beamtime.scanplans["ct_60"].factory()
+# def ct_1():
+#     yield from RE.beamtime.scanplans["ct_1"].factory()
 
 
-RE.clear_suspenders()
+# def ct_60():
+#     yield from RE.beamtime.scanplans["ct_60"].factory()
+
+
+# RE.clear_suspenders()

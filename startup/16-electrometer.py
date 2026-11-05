@@ -30,5 +30,9 @@ try:
     qem1 = XPDQuadEM("XF:28IDC-BI{IM:02}EM180:", name="qem1")
     for det in [qem1]:
         det.read_attrs = ['current2', 'current2.mean_value','current3', 'current3.mean_value']
+    qem2 = XPDQuadEM("XF:28IDC-BI{IM:04}EM180:", name="qem2")
+    for det in [qem2]:
+        det.read_attrs = ['current2', 'current2.mean_value','current3', 'current3.mean_value']
+
 except TimeoutError as e:
     print(f"Failed to connect to electrometer: {e}")
