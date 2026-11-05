@@ -14,6 +14,10 @@ queued step carries ``config=build_agent.to_config()``.  The worker rebuilds the
 campaign from that config and keeps the bound plan per config, so syringe volume
 tracking carries across the steps of one campaign.
 
+The worker only runs plans; the optimizer (bluesky-adaptive, Ax, torch) stays
+with the agent on the workstation (xf28id2-ws3), so the qs environment needs
+xpd-tools without its ``optimization`` extra.
+
 Environment: ``XPD_HALIDE_MOCK=1`` builds simulated pumps/QEPro/shutters.
 """
 
