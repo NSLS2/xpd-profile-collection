@@ -1,0 +1,794 @@
+"""Evaluation function for halide perovskite agent (new Blop v1.0.0b1 API).
+
+Composes the data pipeline from macros 10-13 in _LDRD_Kafka.py into a single
+callable class compatible with the Blop ``Agent`` evaluation_function interface::
+
+    def __call__(self, uid: str, suggestions: list[dict]) -> list[dict]
+
+Each returned dict contains optical metrics, raw PDF correlations, and,
+depending on mode, PDF-fit correlations for the same phase references.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+import time
+import logging
+from dataclasses import dataclass, replace
+from enum import Enum
+from tempfile import TemporaryDirectory
+
+import numpy as np
+import pandas as pd
+from diffpy.pdffit2 import PdfFit
+from diffpy.structure import loadStructure
+from pymatgen.io.cif import CifParser, CifWriter
+from scipy import integrate
+from tiled.queries import Eq
+
+# Add utils to path so we can import _data_analysis / _data_export / pearson_multi_phase
+_utils_dir = os.path.join(os.path.dirname(__file__), "utils")
+if _utils_dir not in sys.path:
+    sys.path.insert(0, _utils_dir)
+
+import _data_analysis as da
+import _data_export as de
+import pearson_multi_phase as pmp
+
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Simulated G(r) reference files bundled with the repo
+# ---------------------------------------------------------------------------
+_SIMULATED_GR_PATH = os.path.join(
+    os.path.dirname(__file__), ".", "data_files"
+)
+_SIMULATED_GR_FILES = ("CsBr.gr", "CsPbBr3.gr", "Cs4PbBr6.gr")
+_PDF_FIT_CIF_FILES = {
+    "CsBr": "CsBr.cif",
+    "CsPbBr3": "CsPbBr3.cif",
+    "Cs4PbBr6": "Cs4PbBr6.cif",
+}
+
+_RAW_PDF_NAME_MAP = {
+    "CsBr.gr correlation": "corr_CsBr",
+    "CsPbBr3.gr correlation": "corr_CsPbBr3",
+    "Cs4PbBr6.gr correlation": "corr_Cs4PbBr6",
+}
+
+# ---------------------------------------------------------------------------
+# Retry configuration for all Tiled reads
+# ---------------------------------------------------------------------------
+_TILED_MAX_RETRIES = 10
+_TILED_RETRY_DELAY = 2.0  # seconds between attempts
+
+
+class PdfEvaluationMode(str, Enum):
+    """How PDF correlations and pdffit2 metrics are used by evaluation."""
+
+    DISABLED = "disabled"
+    RAW_ONLY = "raw_only"  ## only calculate Pearson correlation
+    PDF_FIT_OBJECTIVES = "pdf_fit_objectives"   ## do PPDfit2 fitting
+    RAW_OBJECTIVES_PDF_FIT_TRACKED = "raw_objectives_pdf_fit_tracked"  ## do nothing
+
+
+@dataclass(frozen=True)
+class PdfFitConfig:
+    """Configuration for PDF correlation and optional pdffit2 refinement."""
+
+    mode: PdfEvaluationMode | str = PdfEvaluationMode.PDF_FIT_OBJECTIVES
+    qmax: float = 18.0
+    rmax: float = 120.0
+    qdamp: float = 0.031
+    qbroad: float = 0.032
+    fix_apd: bool = True
+    toler: float = 0.000001
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "mode", PdfEvaluationMode(self.mode))
+
+
+def _no_oxidation_cif(cif_file: str, output_dir: str) -> str:
+    """Write an oxidation-state-free CIF for diffpy and return its path."""
+    parser = CifParser(cif_file)
+    structure = parser.parse_structures(primitive=True)[0]
+    structure.remove_oxidation_states()
+
+    cif_pym = os.path.join(
+        output_dir,
+        f"{os.path.splitext(os.path.basename(cif_file))[0]}_pym.cif",
+    )
+    CifWriter(structure, symprec=0.1).write_file(cif_pym)
+    return cif_pym
+
+
+def _set_CsPbBr3_constrain(
+    pdf_calculator_object: PdfFit,
+    phase_idx: int = 1,
+    fix_apd: bool = True,
+) -> None:
+    """Apply the CsPbBr3 pdffit2 constraints from the LDRD helper."""
+    pf = pdf_calculator_object
+    pf.setphase(phase_idx)
+
+    pf.constrain(pf.lat(1), "@11")
+    pf.constrain(pf.lat(2), "@12")
+    pf.constrain(pf.lat(3), "@13")
+    pf.setpar(11, pf.lat(1))
+    pf.setpar(12, pf.lat(2))
+    pf.setpar(13, pf.lat(3))
+
+    pf.constrain("pscale", "@111")
+    pf.setpar(111, 1.0)
+
+    pf.constrain(pf.delta2, "@122")
+    pf.setpar(122, 6.87)
+    pf.fixpar(122)
+
+    pf.constrain(pf.spdiameter, "@133")
+    pf.setpar(133, 80)
+
+    for idx in range(1, 5):
+        pf.constrain(pf.u11(idx), "@101")
+        pf.constrain(pf.u22(idx), "@101")
+        pf.constrain(pf.u33(idx), "@101")
+    pf.setpar(101, 0.029385)
+
+    for idx in range(5, 9):
+        pf.constrain(pf.u11(idx), "@102")
+        pf.constrain(pf.u22(idx), "@102")
+        pf.constrain(pf.u33(idx), "@102")
+    pf.setpar(102, 0.027296)
+
+    for idx in range(9, 17):
+        pf.constrain(pf.u11(idx), "@103")
+        pf.constrain(pf.u22(idx), "@103")
+        pf.constrain(pf.u33(idx), "@103")
+    pf.setpar(103, 0.041577)
+
+    for idx in range(17, 21):
+        pf.constrain(pf.u11(idx), "@104")
+        pf.constrain(pf.u22(idx), "@104")
+        pf.constrain(pf.u33(idx), "@104")
+    pf.setpar(104, 0.028164)
+
+    if fix_apd:
+        for par in [101, 102, 103, 104]:
+            pf.fixpar(par)
+
+
+def _pdffit2_CsPbX3(
+    gr_data: str,
+    cif_list: list[str],
+    output_dir: str,
+    config: PdfFitConfig,
+) -> PdfFit:
+    """Run the LDRD CsPbX3 pdffit2 refinement and return the PdfFit object."""
+    pym_cif = [_no_oxidation_cif(cif, output_dir) for cif in cif_list]
+
+    pf = PdfFit()
+    pf.read_data(gr_data, "X", config.qmax, config.qdamp)
+
+    for pym in pym_cif:
+        stru = loadStructure(pym)
+        stru.Uisoequiv = 0.04
+        stru.title = os.path.basename(pym)[:-4]
+        pf.add_structure(stru)
+
+    if len(cif_list) == 1 and "CsPbBr" in os.path.basename(cif_list[0]):
+        _set_CsPbBr3_constrain(pf, phase_idx=1, fix_apd=config.fix_apd)
+
+    pf.constrain(pf.dscale, "@902")
+    pf.setpar(902, 1.0)
+    pf.setvar(pf.qdamp, config.qdamp)
+    pf.setvar(pf.qbroad, config.qbroad)
+
+    pf.pdfrange(1, 2.5, config.rmax)
+    pf.refine(toler=config.toler)
+    return pf
+
+
+class HalideEvaluation:
+    """Evaluation function that reads QEPro and pdfstream data from Tiled and
+    computes optical properties (Peak, FWHM, PLQY), raw G(r) Pearson
+    correlations, and optionally pdffit2-refined PDF correlations for the
+    halide perovskite agent.
+
+    Parameters
+    ----------
+    tiled_client
+        A Tiled ``Container`` keyed by Bluesky run UID for the raw beamline
+        data (e.g. ``from_profile("xpd")``).
+    sandbox_client
+        A Tiled ``Container`` pointing to the XPD sandbox where pdfstream
+        writes its analysis results.  Expected to be keyed by UID, with each
+        entry's start metadata containing ``original_run_uid``.
+    plqy_params : list
+        PLQY reference parameters, matching ``self.inputs.PLQY`` from the old
+        dispatcher:
+        ``[flag, 'quinine'|'fluorescein', excitation_wl, abs_ref, PL_int_ref,
+          ri_ref, plqy_ref]``
+    key_height : float
+        Minimum peak height to consider a spectrum "good" (passed to
+        ``good_bad_data``).  Default 200.
+    distance : int
+        Minimum distance between peaks in ``find_peaks``.  Default 100.
+    height : float
+        Minimum height for ``find_peaks``.  Default 50.
+    percent_range_pl : list[float]
+        Percentile range for PL filtering.  Default ``[40, 100]``.
+    percent_range_abs : list[float]
+        Percentile range for absorbance filtering.  Default ``[10, 70]``.
+    pdf_fit_config : PdfFitConfig or None
+        Configuration for PDF evaluation mode and pdffit2 refinement.  Default
+        mode uses fitted PDF correlations as objectives and records raw
+        correlations as tracking metrics.
+    """
+
+    def __init__(
+        self,
+        tiled_client,
+        sandbox_client,
+        plqy_params: list,
+        key_height: float = 200,
+        distance: int = 100,
+        height: float = 50,
+        percent_range_pl: list[float] | None = None,
+        percent_range_abs: list[float] | None = None,
+        peak_target: float = 660,
+        pdf_fit_config: PdfFitConfig | None = None,
+    ):
+        self.tiled_client = tiled_client
+        self.sandbox_client = sandbox_client
+        self.plqy_params = plqy_params
+        self.key_height = key_height
+        self.distance = distance
+        self.height = height
+        self.percent_range_pl = (
+            percent_range_pl if percent_range_pl is not None else [40, 100]
+        )
+        self.percent_range_abs = (
+            percent_range_abs if percent_range_abs is not None else [10, 70]
+        )
+        self.peak_target = peak_target
+        self.pdf_fit_config = pdf_fit_config or PdfFitConfig()
+
+    # ------------------------------------------------------------------
+    # Internal helpers (exposed for testability)
+    # ------------------------------------------------------------------
+
+    def _read_pdfstream_data(self, uid: str) -> dict:
+        """Find the pdfstream analysis run for *uid* in the sandbox and return
+        the G(r) and I(Q) arrays as a plain-numpy dict.
+
+        pdfstream writes a Bluesky run to the sandbox whose start document
+        contains ``original_run_uid == uid``.  We iterate over recent sandbox
+        entries to find it, retrying with the same cadence used for UV-Vis reads.
+
+        Returns
+        -------
+        dict with keys:
+            ``gr_r``, ``gr_G`` — pair-distribution function
+            ``chi_Q``, ``chi_I`` — azimuthally-integrated I(Q)
+        Only ``gr_r`` / ``gr_G`` are guaranteed; the others are best-effort.
+
+        Raises
+        ------
+        RuntimeError
+            If no matching sandbox entry is found after all retries.
+        """
+        for attempt in range(_TILED_MAX_RETRIES):
+            try:
+                print(f"Searching in sandbox for {uid=}")
+                matches = self.sandbox_client.search(Eq("start.original_run_uid", uid))
+                key = matches.keys().last()
+                print(f"\tFound {key=}")
+                entry = matches[key]
+                print(f"\t{entry=}")
+                ds = entry["scattering"]
+                print(f"\t{ds=}")
+                result = {}
+                for field in ("gr_r", "gr_G", "chi_Q", "chi_I"):
+                    if field in ds:
+                        arr = ds[field].read()
+                        print(f"\t\t{field=}, {arr.shape=}")
+                        # pdfstream may store 1-D or 2-D; squeeze to 1-D
+                        result[field] = np.asarray(arr).squeeze()
+                if "gr_r" in result and "gr_G" in result:
+                    return result
+            except Exception as exc:
+                print(
+                    f"[EVAL] Failed to read pdfstream sandbox data "
+                    f"(attempt {attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                    flush=True,
+                )
+            time.sleep(_TILED_RETRY_DELAY)
+
+        raise RuntimeError(
+            f"[EVAL] Could not find pdfstream sandbox entry with "
+            f"original_run_uid={uid!r} after {_TILED_MAX_RETRIES} attempts."
+        )
+
+    def _raw_pdf_correlations(self, pdf_data: dict) -> dict:
+        """Compute raw measured-G(r) correlations against simulated references.
+
+        Parameters
+        ----------
+        pdf_data : dict
+            As returned by :meth:`_read_pdfstream_data`.
+
+        Returns
+        -------
+        dict with keys ``corr_CsBr``, ``corr_CsPbBr3``, ``corr_Cs4PbBr6``.
+        """
+        gr_df = pd.DataFrame({
+            "r": pdf_data["gr_r"],
+            "g(r)": pdf_data["gr_G"],
+        })
+        raw = pmp.pearson_pdf(
+            gr_df,
+            list(_SIMULATED_GR_FILES),
+            os.path.abspath(_SIMULATED_GR_PATH),
+        )
+        return {_RAW_PDF_NAME_MAP.get(k, k): v for k, v in raw.items()}
+
+    @staticmethod
+    def _pearson_to_profile(
+        r_exp: np.ndarray,
+        g_exp: np.ndarray,
+        r_ref: np.ndarray,
+        g_ref: np.ndarray,
+    ) -> float:
+        """Correlate a reference profile to measured G(r) on the measured grid."""
+        r_exp = np.asarray(r_exp)
+        g_exp = np.asarray(g_exp)
+        r_ref = np.asarray(r_ref)
+        g_ref = np.asarray(g_ref)
+
+        exp_mask = np.isfinite(r_exp) & np.isfinite(g_exp) & (r_exp >= 2.0) & (r_exp <= 20.0)
+        ref_mask = np.isfinite(r_ref) & np.isfinite(g_ref)
+        if exp_mask.sum() < 2 or ref_mask.sum() < 2:
+            raise ValueError("Not enough finite PDF points to compute Pearson correlation.")
+
+        r_slice = r_exp[exp_mask]
+        g_slice = g_exp[exp_mask]
+        ref_sort = np.argsort(r_ref[ref_mask])
+        g_ref_i = np.interp(r_slice, r_ref[ref_mask][ref_sort], g_ref[ref_mask][ref_sort])
+        pearson_r = float(np.corrcoef(g_slice, g_ref_i)[0, 1])
+        if not np.isfinite(pearson_r):
+            raise ValueError("PDF fit correlation is not finite.")
+        return pearson_r
+
+    def _fit_pdf_correlations(self, pdf_data: dict) -> dict:
+        """Run pdffit2 phase fits and correlate measured G(r) to each fit."""
+        r_exp = np.asarray(pdf_data["gr_r"])
+        g_exp = np.asarray(pdf_data["gr_G"])
+        fit_mask = np.isfinite(r_exp) & np.isfinite(g_exp)
+        if fit_mask.sum() < 2:
+            raise ValueError("Not enough finite PDF points to fit G(r).")
+
+        fit_rmax = min(self.pdf_fit_config.rmax, float(np.max(r_exp[fit_mask])))
+        if fit_rmax <= 2.5:
+            raise ValueError(
+                f"PDF fit rmax must be greater than 2.5 A; measured rmax is {fit_rmax}."
+            )
+        fit_config = replace(self.pdf_fit_config, rmax=fit_rmax)
+
+        with TemporaryDirectory() as tempdir:
+            gr_path = os.path.join(tempdir, "measured.gr")
+            np.savetxt(gr_path, np.column_stack((r_exp[fit_mask], g_exp[fit_mask])), fmt="%.10g %.10g")
+
+            results = {}
+            for phase_name, cif_file in _PDF_FIT_CIF_FILES.items():
+                cif_path = os.path.join(_SIMULATED_GR_PATH, cif_file)
+                pf = _pdffit2_CsPbX3(
+                    gr_path,
+                    [cif_path],
+                    output_dir=tempdir,
+                    config=fit_config,
+                )
+                results[f"pdf_fit_corr_{phase_name}"] = self._pearson_to_profile(
+                    r_exp,
+                    g_exp,
+                    np.asarray(pf.getR()),
+                    np.asarray(pf.getpdf_fit()),
+                )
+
+            return results
+
+    def _process_pdf(self, pdf_data: dict, uid: str | None = None) -> dict:
+        """Compute PDF outcomes according to the configured evaluation mode."""
+        if self.pdf_fit_config.mode is PdfEvaluationMode.DISABLED:
+            return {}
+
+        results = self._raw_pdf_correlations(pdf_data)
+
+        if self.pdf_fit_config.mode is PdfEvaluationMode.RAW_ONLY:
+            return results
+
+        try:
+            results.update(self._fit_pdf_correlations(pdf_data))
+        except Exception as exc:
+            if self.pdf_fit_config.mode is PdfEvaluationMode.PDF_FIT_OBJECTIVES:
+                msg = "PDF fitting failed"
+                if uid is not None:
+                    msg += f" for uid={uid!r}"
+                raise RuntimeError(msg) from exc
+
+            logger.warning(
+                "PDF fitting failed for uid=%r; continuing with raw PDF correlations only.",
+                uid,
+                exc_info=True,
+            )
+
+        return results
+
+    def _read_tiled_data(self, uid: str) -> tuple[dict, dict, dict, list[dict] | None]:
+        """Read all required streams from Tiled, retrying until all are available.
+
+        Due to a data race between Tiled writing data to disk and evaluation
+        requesting it, individual reads may fail transiently.  Each piece of
+        data is fetched independently so that partial progress is preserved
+        across retries.
+
+        Returns
+        -------
+        qepro_fl : dict
+            QEPro data for the fluorescence stream.
+        qepro_abs : dict
+            QEPro data for the absorbance stream.
+        metadata : dict
+            Run start-document metadata.
+        batch_info : list[dict] or None
+            Per-batch quality records when ``use_good_bad=True``, else ``None``.
+            Each dict has ``"verdict"`` and ``"n_events_in_batch"`` keys.
+
+        Raises
+        ------
+        RuntimeError
+            If any required data cannot be read after all retries are exhausted.
+        """
+        qepro_fl: dict = {}
+        qepro_abs: dict = {}
+        metadata: dict = {}
+        batch_info: list[dict] | None = None
+        use_good_bad: bool | None = None  # None = not yet determined
+
+        for attempt in range(_TILED_MAX_RETRIES):
+            # --- Determine use_good_bad flag (only needs to succeed once) ---
+            if use_good_bad is None:
+                try:
+                    run = self.tiled_client[uid]
+                    use_good_bad = bool(
+                        run.metadata.get("start", {}).get("use_good_bad", False)
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read run metadata (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Read fluorescence stream ---
+            if not qepro_fl:
+                try:
+                    qepro_fl, metadata = de.read_qepro_by_stream(
+                        uid,
+                        stream_name="fluorescence",
+                        data_agent="tiled",
+                        tiled_client=self.tiled_client,
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read fluorescence stream (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Read absorbance stream ---
+            if not qepro_abs:
+                try:
+                    qepro_abs, _ = de.read_qepro_by_stream(
+                        uid,
+                        stream_name="absorbance",
+                        data_agent="tiled",
+                        tiled_client=self.tiled_client,
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read absorbance stream (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Read batch quality info (only when use_good_bad is True) ---
+            if use_good_bad and batch_info is None:
+                try:
+                    run = self.tiled_client[uid]
+                    data = run["fluorescence_quality"].read()
+                    batch_info = [
+                        {"verdict": str(v), "n_events_in_batch": int(n)}
+                        for v, n in zip(
+                            data["verdict"].values,
+                            data["n_events_in_batch"].values,
+                        )
+                    ]
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read fluorescence_quality stream "
+                        f"(attempt {attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Check if all required data is available ---
+            all_ready = (
+                qepro_fl
+                and qepro_abs
+                and use_good_bad is not None
+                and (not use_good_bad or batch_info is not None)
+            )
+            if all_ready:
+                return qepro_fl, qepro_abs, metadata, batch_info
+
+            time.sleep(_TILED_RETRY_DELAY)
+
+        # Build a descriptive error message listing what's still missing.
+        missing = []
+        if use_good_bad is None:
+            missing.append("run metadata")
+        if not qepro_fl:
+            missing.append("fluorescence stream")
+        if not qepro_abs:
+            missing.append("absorbance stream")
+        if use_good_bad and batch_info is None:
+            missing.append("fluorescence_quality stream")
+
+        raise RuntimeError(
+            f"[EVAL] Failed to read required Tiled data for uid={uid!r} after "
+            f"{_TILED_MAX_RETRIES} attempts. Missing: {', '.join(missing)}."
+        )
+
+    def _filter_fl_to_good_batches(
+        self, qepro_fl: dict, batch_info: list[dict]
+    ) -> dict:
+        """Return a copy of ``qepro_fl`` containing only events from good batches.
+
+        The ``fluorescence`` stream stores PL shots from every batch
+        (good and bad) concatenated in acquisition order.  ``batch_info``
+        supplies the per-batch verdict and event count, which together let us
+        reconstruct which row indices belong to each batch.
+
+        Parameters
+        ----------
+        qepro_fl : dict
+            Full fluorescence QEPro dict; all arrays have first dimension
+            equal to the total number of PL events across all batches.
+        batch_info : list[dict]
+            Ordered list of per-batch records from :meth:`_read_tiled_data`.
+
+        Returns
+        -------
+        dict
+            Filtered copy of ``qepro_fl``.  If no good batches are found the
+            original dict is returned unchanged and a warning is printed.
+        """
+        good_indices: list[int] = []
+        cursor = 0
+        for batch in batch_info:
+            n = batch["n_events_in_batch"]
+            if batch["verdict"] == "good":
+                good_indices.extend(range(cursor, cursor + n))
+            cursor += n
+
+        n_total = cursor
+        if not good_indices:
+            print(
+                "[EVAL] WARNING: no good PL batches found; using all events for evaluation.",
+                flush=True,
+            )
+            return qepro_fl
+
+        n_good = len(good_indices)
+        print(
+            f"[EVAL] Quality filter: keeping {n_good}/{n_total} PL events "
+            f"({n_total - n_good} from bad batches discarded).",
+            flush=True,
+        )
+
+        idx = np.array(good_indices)
+        return {
+            key: (arr[idx] if (a := np.asarray(arr)).ndim >= 1 and a.shape[0] == n_total else arr)
+            for key, arr in qepro_fl.items()
+        }
+
+    def _process_pl(self, qepro_dic: dict, metadata_dic: dict):
+        """Run PL percentile filtering, peak finding, and Gaussian fitting.
+
+        Corresponds to macros 10 + 12.
+
+        Returns
+        -------
+        peak_emission : float
+            Center of the highest Gaussian peak (nm), or 0 if no peak found.
+        fwhm : float
+            Full-width at half-maximum (nm), or 1000 if no peak found.
+        PL_integral : float
+            Simpson integral of the PL spectrum, or 0 if no peak found.
+        r_2 : float
+            R-squared of the Gaussian fit, or 0 if no peak found.
+        has_peak : bool
+            Whether a valid peak was found.
+        """
+        # Macro 10: percentile filtering + peak identification
+        try:
+            x0, y0, data_id, peak, prop = da._identify_multi_in_kafka(
+                qepro_dic,
+                metadata_dic,
+                key_height=self.key_height,
+                distance=self.distance,
+                height=self.height,
+                dummy_test=False,
+                percent_range=self.percent_range_pl,
+            )
+        except (ValueError, IndexError):
+            # Upstream good_bad_data raises ValueError when no peaks are found
+            # at all (empty spectrum / signal below height threshold).
+            return 0.0, 1000.0, 0.0, 0.0, False
+
+        has_peak = isinstance(peak, np.ndarray) and len(peak) > 0
+
+        if not has_peak:
+            return 0.0, 1000.0, 0.0, 0.0, False
+
+        # Macro 12: Gaussian fitting
+        x, y, shifted_peak, f_fit, popt = da._fitting_in_kafka(
+            x0, y0, data_id, peak, prop, is_one_peak=True, dummy_test=False
+        )
+
+        # Extract peak_emission and fwhm from popt
+        # popt layout for _1gauss: [A, x0, sigma]  (groups of 3 for multi-gauss)
+        constant = 2.355 if "gauss" in f_fit.__name__ else 1
+
+        intensity_list, peak_list, fwhm_list = [], [], []
+        for i in range(int(len(popt) / 3)):
+            intensity_list.append(popt[i * 3 + 0])
+            peak_list.append(popt[i * 3 + 1])
+            fwhm_list.append(popt[i * 3 + 2] * constant)
+
+        peak_emission_id = np.argmax(np.asarray(intensity_list))
+        peak_emission = peak_list[peak_emission_id]
+        fwhm = fwhm_list[peak_emission_id]
+
+        # R-squared
+        fitted_y = f_fit(x, *popt)
+        r2_idx1, _ = da.find_nearest(x, popt[1] - 3 * popt[2])
+        r2_idx2, _ = da.find_nearest(x, popt[1] + 3 * popt[2])
+        r_2 = da.r_square(
+            x[r2_idx1:r2_idx2],
+            y[r2_idx1:r2_idx2],
+            fitted_y[r2_idx1:r2_idx2],
+            y_low_limit=0,
+        )
+
+        # PL integral (macro 13 step 1)
+        PL_integral = integrate.simpson(y)
+
+        return peak_emission, fwhm, PL_integral, r_2, True
+
+    def _process_absorbance(self, qepro_dic: dict):
+        """Run absorbance percentile filtering and baseline correction.
+
+        Corresponds to macro 11.
+
+        Returns
+        -------
+        wavelength : np.ndarray
+            Wavelength array (nm).
+        abs_offset : np.ndarray
+            Baseline-corrected absorbance array.
+        """
+        abs_per = da.percentile_abs(
+            qepro_dic["QEPro_x_axis"],
+            qepro_dic["QEPro_output"],
+            percent_range=self.percent_range_abs,
+        )
+        abs_array = abs_per.mean(axis=0)
+        wavelength = qepro_dic["QEPro_x_axis"][0]
+
+        # Two-range baseline fit; pick the one with flatter slope
+        popt01, _ = da.fit_line_2D(
+            wavelength, abs_array, da.line_2D, x_range=[205, 240]
+        )
+        popt02, _ = da.fit_line_2D(
+            wavelength, abs_array, da.line_2D, x_range=[750, 950]
+        )
+        popt = popt02 if abs(popt01[0]) >= abs(popt02[0]) else popt01
+
+        abs_offset = abs_array - da.line_2D(wavelength, *popt)
+        return wavelength, abs_offset
+
+    def _compute_plqy(
+        self, abs_offset: np.ndarray, wavelength: np.ndarray, PL_integral: float
+    ) -> float:
+        """Compute PLQY from baseline-corrected absorbance and PL integral.
+
+        Corresponds to the PLQY portion of macro 13.
+
+        Returns
+        -------
+        float
+            Photoluminescence quantum yield.
+        """
+        excitation_wl = self.plqy_params[2]
+        idx, _ = da.find_nearest(wavelength, excitation_wl)
+        absorbance_s = abs_offset[idx]
+
+        # Reference params: [abs_ref, PL_int_ref, ri_ref, plqy_ref]
+        ref_params = self.plqy_params[3:]
+        refractive_index_solvent = 1.506  # toluene
+
+        if self.plqy_params[1] == "fluorescein":
+            return da.plqy_fluorescein(
+                absorbance_s, PL_integral, refractive_index_solvent, *ref_params
+            )
+        return da.plqy_quinine(
+            absorbance_s, PL_integral, refractive_index_solvent, *ref_params
+        )
+
+    # ------------------------------------------------------------------
+    # Main entry point
+    # ------------------------------------------------------------------
+
+    def __call__(self, uid: str, suggestions: list[dict]) -> list[dict]:
+        """Evaluate a Bluesky run and return objective outcomes.
+
+        Parameters
+        ----------
+        uid : str
+            Bluesky run UID.
+        suggestions : list[dict]
+            Optimizer suggestions; each must contain an ``_id`` key.
+
+        Returns
+        -------
+        list[dict]
+            One outcome dict per suggestion, with keys ``Peak``,
+            ``peak_distance``, ``log_FWHM``, ``log_PLQY``,
+            ``corr_CsBr``, ``corr_CsPbBr3``, ``corr_Cs4PbBr6``,
+            optional ``pdf_fit_corr_CsBr``, ``pdf_fit_corr_CsPbBr3``,
+            ``pdf_fit_corr_Cs4PbBr6``, and ``_id``.
+        """
+        qepro_fl, qepro_abs, metadata, batch_info = self._read_tiled_data(uid)
+
+        # When use_good_bad was active, the fluorescence stream contains
+        # spectra from both bad and good batches.  Filter down to only the
+        # good-batch events before computing Peak / FWHM / PLQY.
+        if batch_info is not None:
+            qepro_fl = self._filter_fl_to_good_batches(qepro_fl, batch_info)
+
+        peak_emission, fwhm, PL_integral, r_2, has_peak = self._process_pl(
+            qepro_fl, metadata
+        )
+        wavelength, abs_offset = self._process_absorbance(qepro_abs)
+        plqy = self._compute_plqy(abs_offset, wavelength, PL_integral) if has_peak else 0.0
+
+        # --- PDF correlations ---
+        if self.pdf_fit_config.mode is PdfEvaluationMode.DISABLED:
+            pdf_correlations = {}
+        else:
+            pdf_data = self._read_pdfstream_data(uid)
+            pdf_correlations = self._process_pdf(pdf_data, uid=uid)
+
+        return [
+            {
+                "Peak": peak_emission,
+                "peak_distance": abs(self.peak_target - peak_emission),
+                "log_FWHM": np.log(fwhm),
+                "log_PLQY": np.log(plqy),
+                **pdf_correlations,
+                "_id": s["_id"],
+            }
+            for s in suggestions
+        ]

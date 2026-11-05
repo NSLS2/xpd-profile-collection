@@ -67,9 +67,11 @@ class TiledInserter:
 tiled_writing_client = from_profile(
     "nsls2", api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_XPD"]
 )["xpd"]["raw"]
+tiled_writing_client.context.http_client.headers['tiled-qos'] = 'acquisition'
 tiled_inserter = TiledInserter(tiled_writing_client)
 if not is_re_worker_active():
     c = tiled_reading_client = from_profile("nsls2")["xpd"]["raw"]
+    c.context.http_client.headers['tiled-qos'] = 'acquisition'
     db = Broker(c)
 
 nslsii.configure_base(
@@ -82,7 +84,10 @@ nslsii.configure_base(
     epics_context=False,
     #publish_documents_with_kafka="xpd" if not is_re_worker_active() else None,
     publish_documents_with_kafka=None,
-    redis_url="info.xpd.nsls2.bnl.gov",
+    # redis_url="info.xpd.nsls2.bnl.gov",
+    redis_url="xf28id2-xpd-redis1.nsls2.bnl.gov",
+    redis_port=6380,
+    redis_ssl=True
 )
 
 del one_1d_step

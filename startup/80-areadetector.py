@@ -288,7 +288,7 @@ class PerkinElmerMulti(MultiTrigger, XPDPerkinElmer):
 
 
 # PE1/2/3 PV prefixes in one place:
-#pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE2}'
+#pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
 pe1_pv_prefix = 'XF:28IDC-ES:1{Det:PE1}'
 pe2_pv_prefix = 'XF:28IDC-ES:1{Det:PE2}'
 pe3_pv_prefix = 'XF:28IDD-ES:2{Det:PE3}'
