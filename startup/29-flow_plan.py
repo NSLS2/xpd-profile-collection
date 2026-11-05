@@ -387,6 +387,13 @@ def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
                 _is_infusing = 0.0
 
             total_rate += rate * unit_const * _is_infusing
+            
+        # Temp debug
+        print(f"[DBG] mixer={mixer!r}")
+        print(f"[DBG] pumps={[p.name for p in mixer_pump[1:]]}")
+        print(f"[DBG] status={pump_status!r}")
+        print(f"[DBG] read_infuse_rates={infuse_rates!r} units={infuse_rate_unit!r}")
+        print(f"[DBG] total_rate={total_rate}")
 
         # Guard from divide by zero
         if total_rate > 0:
