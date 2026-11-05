@@ -388,7 +388,12 @@ def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
 
             total_rate += rate * unit_const * _is_infusing
 
-        res_time_sec += 60*mixer_vol_mm3/total_rate
+        # Guard from divide by zero
+        if total_rate > 0:
+            res_time_sec += 60*mixer_vol_mm3/total_rate
+        else:
+            print(f'ERROR ON DIVIDE BY ZERO, FALLING BACK TO 60s. CHECK PUMP STATUS.')
+            res_time_sec = 60
 
     print(f'Reaction resident time is {res_time_sec:.2f} seconds.')
     print(f'Wait for {ratio} times of resident time, in total of {res_time_sec*ratio:.2f} seconds.')

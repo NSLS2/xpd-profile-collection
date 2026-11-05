@@ -234,6 +234,9 @@ class syrng_ultra(Device):
 
         if self.communication.get() == 'Disabled':
             yield from bps.mv(self.communication, 0, self.update_pump, 6)
+        else:
+            # Pump already enabled
+            yield from bps.mv(self.update_pump, 6)
 
         def _syringe_size(input_size, syringe_material):
             #yield from bps.mv(self.set_infuse_range, 1, self.set_withdraw_range, 1)
@@ -338,7 +341,18 @@ class syrng_ultra(Device):
             yield from bps.abs_set(self.clear_infused, 1, wait=True)
             yield from bps.abs_set(self.clear_withdrawn, 1, wait=True)
         yield from bps.abs_set(self.pump_infuse, 1, wait=True)
-        yield from bps.sleep(1)
+        #yield from bps.sleep(1)
+        
+        # Wait for infusing report
+        infusing = False
+        for _ in range(50):
+            if self.status.get() == "Infusing":
+                infusing = True
+                break
+            yield from bps.sleep(0.1)
+        
+        if not infusing:
+            print(f"Warning: {self.name} did not report 'Infusing' after start.")
 
         #time.sleep(1)
         ## There is a specific way in RE{}; time.sleep is dangerous for RE{} --> use bps.sleep()
