@@ -1,182 +1,356 @@
-""" Register XPD tools plans into the queueserver namespace"""
+"""
+UV-Vis-only and X-ray-only acquisition plan variants.
 
-from __future__ import annotations
+Registers ``uvvis_acquire`` and ``xray_acquire`` into the queueserver worker
+namespace so the blop agent can submit them by name.  Both are thin variants
+of ``xray_uvvis_acquire`` from ``97-xray_uvvis.py`` and share all of its
+helpers (``steady_state_flow``, ``_wash_loop``, ``measure_absorbance``,
+``measure_pl``, ``measure_scattering``, ``_pl_with_quality_gate``,
+``_resolve_pumps``, ``_resolve_pumps_from_dofs``, ``_make_sample_name``,
+TypedDicts, DEFAULT_* dicts) which are already in the worker namespace from
+the earlier startup file.
 
-""" from xpd_tools.optimization.plans import (
-	create_uvvis_plan,
-	create_xray_plan,
-	create_xray_screened_plan,
-	create_xray_uvvis_plan
- )
- 
- 
-Hack method to be replaced with XPD-tools managed plans.
+Deploy:
+    Copy this file to the same startup/ directory as 97-xray_uvvis.py.
+    Restart the RE manager so both names appear in existing_plans.
+    ``user_group_permissions.yaml`` already allows ``:.*`` for primary/root —
+    no permissions change needed.
 
-Done Nov 5 by TB to be able to run experiments.
+Differences from xray_uvvis_acquire
+------------------------------------
+uvvis_acquire:
+  - No XrayConfig parameter; pe1c never touched.
+  - Stages [qepro] only.
+  - Runs PL quality gate + absorbance; no measure_scattering.
+  - No _inject_* / periodic_dark wrappers.
+  - run_key = "uvvis_acquire"
 
+xray_acquire:
+  - No QualityConfig parameter; qepro never touched.
+  - Stages [pe1c] only; runs _pre_plan(pe1c) for detector config metadata.
+  - Runs measure_scattering only; no PL / absorbance.
+  - Keeps _inject_* / periodic_dark logic gated on xray_no_dark.
+  - run_key = "xray_acquire"
 
-
-
-
-
-Standalone worker plans for the current xpd-tools config-passing path.
-
-
-Plan coverage
--------------
-uvvis_acquire      → this file  (xpd-tools plan, new config kwarg path)
-xray_acquire       → this file  (xpd-tools plan, new config kwarg path)
-xray_uvvis_acquire → 97-xray_uvvis.py  (old flow_config path, untouched)
-
-How it works
-------------
-The host's build_agent.build() sends::
-
-    acquisition_plan      = "uvvis_acquire" | "xray_acquire"
-    acquisition_plan_kwargs = {"config": build_agent.to_config()}
-
-Each wrapper below reconstructs a BuildAgent from the arriving config dict,
-binds it to the device objects built here at worker startup, and delegates to
-the real xpd-tools plan.  Cross-trial state (VolumeTracker, quality signals)
-is cached in the closure keyed by (plan_name, config_fingerprint), so it
-persists across trials of the same campaign and resets cleanly if the config
-changes (e.g. a syringe swap between campaigns).
-
-Device notes
-------------
-- Pumps / QEPro / LED / shutters come from build_halide_devices() (v2 pump API).
-- pe1c (area detector) is injected from the profile-collection namespace for
-  xray_acquire.  Guarded with try/except so a uvvis-only or mock worker still
-  loads if pe1c is absent.
-- wrap_xray_run adapts the beamline's periodic_dark_02(plan) to the xpd-tools
-  signature (plan, no_dark).  Guarded the same way.
-
-Environment variables
----------------------
-XPD_HALIDE_MOCK  (optional, default "0")
-    Set to "1" to use simulated devices instead of live EPICS connections.
+Bug-fixes vs original xray_uvvis_acquire end-of-plan stop_group call:
+  - wash_pumps defaults to [] when do_wash is False (was NameError).
+  - dilute_pump defaults to [] when post_dilute is False (was TypeError on + None).
 """
 
 
-
-import hashlib
-import json
-import logging
-import os
-
-_logger = logging.getLogger(__name__)
-
 # ---------------------------------------------------------------------------
-# 1. Build xpd-tools device wrappers (v2 pump API; no config file needed)
+# uvvis_acquire
 # ---------------------------------------------------------------------------
 
-from xpd_tools.optimization.devices import build_halide_devices  # noqa: E402
 
-_mock = os.environ.get("XPD_HALIDE_MOCK", "0").strip().lower() in ("1", "true", "yes")
-if _mock:
-    _logger.warning("XPD_HALIDE_MOCK is set -- using simulated devices, NOT real hardware.")
+def uvvis_acquire(
+    suggestions: list[dict],
+    actuators,
+    sensors=None,
+    md=None,
+    *,
+    flow_config: FlowConfig | None = None,
+    wash_config: WashConfig | None = None,
+    quality_config: QualityConfig | None = None,
+):
+    """UV-Vis-only acquisition plan (no X-ray).
 
-_devices = build_halide_devices(mock=_mock)
+    Runs the full pump synthesis sequence and collects fluorescence + absorbance
+    via the QEPro spectrometer.  pe1c is never staged or triggered.
 
-# Inject the live area detector for xray_acquire.
-# Guarded so a uvvis-only / mock worker still loads cleanly if pe1c is absent.
-try:
-    _devices["xray_detector"] = pe1c   # noqa: F821 (profile-collection global from 80-areadetector.py)
-    _logger.info("xray_acquire: pe1c injected as xray_detector.")
-except NameError:
-    _logger.warning(
-        "pe1c not found in worker namespace -- xray_acquire will raise if called. "
-        "Ensure 80-areadetector.py loads before 98-hack.py."
-    )
+    Blop AcquisitionPlan signature::
 
+        uvvis_acquire(suggestions, actuators, sensors=None, md=None)
 
-def _wrap_xray_run(plan, no_dark):
-    """Adapt the beamline's periodic_dark_02 to xpd-tools' (plan, no_dark) signature."""
-    if no_dark:
-        return plan
-    try:
-        return periodic_dark_02(plan)  # noqa: F821 (profile-collection global from 94-CHL-plans.py)
-    except NameError:
-        _logger.warning("periodic_dark_02 not found -- xray run will proceed without dark frames.")
-        return plan
+    Parameters
+    ----------
+    suggestions : list[dict]
+        One-element list from the optimizer; dict maps DOF names to rates.
+    actuators : list
+        Ignored (blop protocol requirement).
+    sensors : list | None
+        Ignored (blop protocol requirement).
+    md : dict | None
+        Extra metadata merged into the run header.
+    flow_config : FlowConfig | None
+        Overrides for DEFAULT_FLOW_CONFIG.
+    wash_config : WashConfig | None
+        Overrides for DEFAULT_WASH_CONFIG.
+    quality_config : QualityConfig | None
+        Overrides for DEFAULT_QUALITY_CONFIG.
 
-
-# ---------------------------------------------------------------------------
-# 2. Per-campaign plan cache: (plan_name, config_fingerprint) -> bound plan
-#
-#    Caching means VolumeTracker.measure_sec and quality signals survive
-#    across trials.  A new config (syringe swap, geometry change) gets its
-#    own fresh entry automatically.
-# ---------------------------------------------------------------------------
-
-_cache: dict[tuple[str, str], object] = {}
-
-
-def _fingerprint(config: dict) -> str:
-    return hashlib.sha256(
-        json.dumps(config, sort_keys=True, default=str).encode()
-    ).hexdigest()
-
-
-def _get_bound_plan(plan_name: str, config: dict):
-    key = (plan_name, _fingerprint(config))
-    if key in _cache:
-        return _cache[key]
-
-    from xpd_tools.optimization.agent import BuildAgent  # lazy import
-
-    agent = BuildAgent.from_config(config)
-    expected = agent._acquisition_plan_name()
-    if expected != plan_name:
-        raise ValueError(
-            f"Worker called '{plan_name}' but the arriving config has "
-            f"evaluation_method={agent.evaluation_method!r} which maps to "
-            f"'{expected}'.  Make sure the host's BuildAgent uses the matching "
-            "evaluation_method for this plan."
-        )
-
-    _logger.info(
-        "Binding '%s' from config (evaluation_method=%r, sources=%r)",
-        plan_name,
-        agent.evaluation_method,
-        [s.pump for s in (agent.sources or [])],
-    )
-
-    xray_plans = {"xray_acquire", "xray_screened_acquire", "xray_uvvis_acquire"}
-    wrap = _wrap_xray_run if plan_name in xray_plans else None
-    plans = agent.register_acquisition_plans(_devices, wrap_xray_run=wrap)
-    _cache[key] = plans[plan_name]
-    return _cache[key]
-
-
-# ---------------------------------------------------------------------------
-# 3. Worker-facing plan callables (discovered by queueserver via globals())
-# ---------------------------------------------------------------------------
-
-def uvvis_acquire(suggestions, actuators, sensors=None, config=None, md=None):
-    """UV-Vis optimization acquisition plan (xpd-tools config-passing path)."""
-    
-    _logger.info("ARRIVING config experiment.source=%r", (config or {}).get("experiment", {}).get("sources"))
-    
-    if config is None:
-        raise ValueError(
-            "uvvis_acquire requires a 'config' kwarg containing build_agent.to_config(). "
-            "Ensure the host's build_agent.build() is up to date."
-        )
-    yield from _get_bound_plan("uvvis_acquire", config)(suggestions, actuators, sensors, md)
-
-
-def xray_acquire(suggestions, actuators, sensors=None, config=None, md=None):
-    """X-ray-only optimization acquisition plan (xpd-tools config-passing path).
-
-    Note: requires pe1c (area detector) and periodic_dark_02 to be present in
-    the worker namespace.  Validate before running an xray campaign.
+    Returns
+    -------
+    str
+        UID of the Bluesky run.
     """
-    if config is None:
-        raise ValueError(
-            "xray_acquire requires a 'config' kwarg containing build_agent.to_config(). "
-            "Ensure the host's build_agent.build() is up to date."
+    flow: FlowConfig = {**DEFAULT_FLOW_CONFIG, **(flow_config or {})}
+    wash: WashConfig = {**DEFAULT_WASH_CONFIG, **(wash_config or {})}
+    quality: QualityConfig = {**DEFAULT_QUALITY_CONFIG, **(quality_config or {})}
+
+    syringe_list        = flow["syringe_list"]
+    syringe_mater_list  = flow["syringe_mater_list"]
+    target_vol_list     = flow["target_vol_list"]
+    set_target_list     = flow["set_target_list"]
+    rate_unit           = flow["rate_unit"]
+    mixer_lengths_cm    = flow["mixer_lengths_cm"]
+    resident_t_ratio    = flow["resident_t_ratio"]
+    precursor_list      = flow["precursor_list"]
+    precursor_prefix_list = flow["precursor_prefix_list"]
+    post_dilute         = flow["post_dilute"]
+    dof_to_pump         = flow["dof_to_pump"]
+    dilute_pump_name    = flow["dilute_pump_name"]
+    post_dilute_ratio   = flow["post_dilute_ratio"]
+    post_dilute_wait_sec = flow["post_dilute_wait_sec"]
+
+    do_wash    = wash["do_wash"]
+    use_good_bad = quality["use_good_bad"]
+    good_target  = quality["good_target"]
+    max_bad      = quality["max_bad"]
+    num_abs      = quality["num_abs"]
+    num_flu      = quality["num_flu"]
+
+    if len(suggestions) != 1:
+        raise RuntimeError(
+            f"uvvis_acquire expects exactly 1 suggestion, got {len(suggestions)}"
         )
-    yield from _get_bound_plan("xray_acquire", config)(suggestions, actuators, sensors, md)
+    suggestion = suggestions[0]
+
+    dof_names = []
+    for n in precursor_prefix_list:
+        for k in suggestion.keys():
+            if n in k:
+                dof_names.append(k)
+    rate_list = [float(suggestion[name]) for name in dof_names]
+
+    pump_list   = _resolve_pumps_from_dofs(dof_names, dof_to_pump)
+    sample_type = _make_sample_name(rate_list, precursor_prefix_list)
+
+    _md = {
+        "sample_type": sample_type,
+        "sample_name": sample_type,
+        "infuse_rates": rate_list,
+        "dof_names": dof_names,
+        "precursors": precursor_list[: len(pump_list)],
+        "pumps": [p.name for p in pump_list],
+        "detectors": ["qepro"],
+    }
+    _md.update(md or {})
+
+    monitor = (
+        PLQualityMonitor(qepro, stream_name="fluorescence") if use_good_bad else None
+    )
+    subs = {"descriptor": [monitor], "event": [monitor]} if monitor else {}
+
+    dilute_pump = _resolve_pumps(dilute_pump_name) if post_dilute else []
+
+    @bpp.subs_decorator(subs)
+    @bpp.set_run_key_decorator("uvvis_acquire")
+    @bpp.baseline_decorator(pump_list)
+    @bpp.stage_decorator([qepro])
+    @bpp.run_decorator(md=_md)
+    def acquisition():
+        yield from _pl_with_quality_gate(qepro, monitor, num_flu, good_target, max_bad)
+        yield from measure_absorbance(qepro, num_abs)
+        yield from bps.mv(LED, "Low", UV_shutter, "Low")
+        if post_dilute and dilute_pump:
+            yield from stop_group([dilute_pump[-1]])
+            dilute_pump[-1].stop_pump()
+            print(f"\nUV-Vis done. Stopping {dilute_pump_name[-1]}\n")
+
+    uid = yield from steady_state_flow(
+        acquisition(),
+        pump_list=pump_list,
+        rate_list=rate_list,
+        syringe_list=syringe_list[: len(pump_list)],
+        target_vol_list=target_vol_list[: len(pump_list)],
+        set_target_list=set_target_list[: len(pump_list)],
+        syringe_mater_list=syringe_mater_list[: len(pump_list)],
+        mixer_lengths_cm=mixer_lengths_cm,
+        resident_t_ratio=resident_t_ratio,
+        post_dilute=post_dilute,
+        dilute_pump=dilute_pump or None,
+        dilute_rate_ratio=post_dilute_ratio,
+        dilute_wait_sec=post_dilute_wait_sec,
+    )
+
+    wash_pumps = []
+    if do_wash and wash["pump_names"]:
+        wash_pumps = _resolve_pumps(wash["pump_names"])
+        yield from _wash_loop(
+            wash_pumps,
+            wash["syringe_list"],
+            wash["rate_list"],
+            wash["duration_sec"],
+            syringe_mater_list=wash["syringe_mater_list"],
+            target_vol_list=wash["target_vol_list"],
+            set_target_list=wash["set_target_list"],
+            rate_unit=rate_unit,
+        )
+
+    yield from stop_group(wash_pumps + pump_list + dilute_pump)
+    return uid
 
 
+# ---------------------------------------------------------------------------
+# xray_acquire
+# ---------------------------------------------------------------------------
+
+
+def xray_acquire(
+    suggestions: list[dict],
+    actuators,
+    sensors=None,
+    md=None,
+    *,
+    flow_config: FlowConfig | None = None,
+    xray_config: XrayConfig | None = None,
+    wash_config: WashConfig | None = None,
+):
+    """X-ray-only acquisition plan (no UV-Vis / QEPro).
+
+    Runs the full pump synthesis sequence and collects one scattering frame
+    from pe1c.  qepro is never staged or triggered.
+
+    Blop AcquisitionPlan signature::
+
+        xray_acquire(suggestions, actuators, sensors=None, md=None)
+
+    Parameters
+    ----------
+    suggestions : list[dict]
+        One-element list from the optimizer; dict maps DOF names to rates.
+    actuators : list
+        Ignored (blop protocol requirement).
+    sensors : list | None
+        Ignored (blop protocol requirement).
+    md : dict | None
+        Extra metadata merged into the run header.
+    flow_config : FlowConfig | None
+        Overrides for DEFAULT_FLOW_CONFIG.
+    xray_config : XrayConfig | None
+        Overrides for DEFAULT_XRAY_CONFIG.
+    wash_config : WashConfig | None
+        Overrides for DEFAULT_WASH_CONFIG.
+
+    Returns
+    -------
+    str
+        UID of the Bluesky run.
+    """
+    flow: FlowConfig = {**DEFAULT_FLOW_CONFIG, **(flow_config or {})}
+    xray: XrayConfig = {**DEFAULT_XRAY_CONFIG, **(xray_config or {})}
+    wash: WashConfig = {**DEFAULT_WASH_CONFIG, **(wash_config or {})}
+
+    syringe_list        = flow["syringe_list"]
+    syringe_mater_list  = flow["syringe_mater_list"]
+    target_vol_list     = flow["target_vol_list"]
+    set_target_list     = flow["set_target_list"]
+    rate_unit           = flow["rate_unit"]
+    mixer_lengths_cm    = flow["mixer_lengths_cm"]
+    resident_t_ratio    = flow["resident_t_ratio"]
+    precursor_list      = flow["precursor_list"]
+    precursor_prefix_list = flow["precursor_prefix_list"]
+    post_dilute         = flow["post_dilute"]
+    dof_to_pump         = flow["dof_to_pump"]
+    dilute_pump_name    = flow["dilute_pump_name"]
+    post_dilute_ratio   = flow["post_dilute_ratio"]
+    post_dilute_wait_sec = flow["post_dilute_wait_sec"]
+
+    xray_exposure      = xray["exposure"]
+    xray_frame_acq_time = xray["frame_acq_time"]
+    xray_stream_name   = xray["stream_name"]
+    xray_no_dark       = xray["no_dark"]
+
+    do_wash = wash["do_wash"]
+
+    if len(suggestions) != 1:
+        raise RuntimeError(
+            f"xray_acquire expects exactly 1 suggestion, got {len(suggestions)}"
+        )
+    suggestion = suggestions[0]
+
+    dof_names = []
+    for n in precursor_prefix_list:
+        for k in suggestion.keys():
+            if n in k:
+                dof_names.append(k)
+    rate_list = [float(suggestion[name]) for name in dof_names]
+
+    pump_list   = _resolve_pumps_from_dofs(dof_names, dof_to_pump)
+    sample_type = _make_sample_name(rate_list, precursor_prefix_list)
+
+    # Configure area detector and collect scan-plan metadata
+    sp_md = yield from _pre_plan([pe1c], xray_exposure, frame_acq_time=xray_frame_acq_time)
+
+    _md = {
+        "sample_type": sample_type,
+        "sample_name": sample_type,
+        "infuse_rates": rate_list,
+        "dof_names": dof_names,
+        "precursors": precursor_list[: len(pump_list)],
+        "pumps": [p.name for p in pump_list],
+        "detectors": ["pe1c"],
+    }
+    _md.update(md or {})
+    _md.update(sp_md)
+
+    dilute_pump = _resolve_pumps(dilute_pump_name) if post_dilute else []
+
+    @bpp.set_run_key_decorator("xray_acquire")
+    @bpp.baseline_decorator(pump_list)
+    @bpp.stage_decorator([pe1c])
+    @bpp.run_decorator(md=_md)
+    def acquisition():
+        if post_dilute and dilute_pump:
+            yield from stop_group([dilute_pump[-1]])
+            dilute_pump[-1].stop_pump()
+            print(f"\nStopping {dilute_pump_name[-1]} before X-ray\n")
+        yield from measure_scattering(pe1c, stream_name=xray_stream_name)
+
+    # Apply dark-frame / metadata injectors the same way xray_uvvis_acquire does
+    if xray_no_dark:
+        grand_plan = acquisition()
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        inner_plan = grand_plan
+    else:
+        grand_plan = periodic_dark(acquisition())
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        inner_plan = grand_plan
+
+    uid = yield from steady_state_flow(
+        inner_plan,
+        pump_list=pump_list,
+        rate_list=rate_list,
+        syringe_list=syringe_list[: len(pump_list)],
+        target_vol_list=target_vol_list[: len(pump_list)],
+        set_target_list=set_target_list[: len(pump_list)],
+        syringe_mater_list=syringe_mater_list[: len(pump_list)],
+        mixer_lengths_cm=mixer_lengths_cm,
+        resident_t_ratio=resident_t_ratio,
+        post_dilute=post_dilute,
+        dilute_pump=dilute_pump or None,
+        dilute_rate_ratio=post_dilute_ratio,
+        dilute_wait_sec=post_dilute_wait_sec,
+    )
+
+    wash_pumps = []
+    if do_wash and wash["pump_names"]:
+        wash_pumps = _resolve_pumps(wash["pump_names"])
+        yield from _wash_loop(
+            wash_pumps,
+            wash["syringe_list"],
+            wash["rate_list"],
+            wash["duration_sec"],
+            syringe_mater_list=wash["syringe_mater_list"],
+            target_vol_list=wash["target_vol_list"],
+            set_target_list=wash["set_target_list"],
+            rate_unit=rate_unit,
+        )
+
+    yield from stop_group(wash_pumps + pump_list + dilute_pump)
+    return uid
