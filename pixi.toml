@@ -64,7 +64,7 @@ start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=."
 pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
 
 [feature.qs.pypi-dependencies]
-xpd-tools = { git = "https://github.com/NSLS2/xpd-tools", rev = "autonomous" }
+xpd-tools = { git = "https://github.com/NSLS2/xpd-tools", rev = "autonomous", extras = ["optimization"] }
 
 [environments.terminal]
 features = ["profile", "terminal"]
