@@ -12,11 +12,12 @@
 Hack method to be replaced with XPD-tools managed plans.
 
 Done Nov 5 by TB to be able to run experiments.
-"""
 
 
 
-"""
+
+
+
 Standalone worker plans for the current xpd-tools config-passing path.
 
 
