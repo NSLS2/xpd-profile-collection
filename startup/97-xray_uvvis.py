@@ -169,39 +169,38 @@ class QualityConfig(TypedDict, total=False):
 
 
 DEFAULT_FLOW_CONFIG: FlowConfig = {
-    "syringe_list": [50, 50, 50],
-    "syringe_mater_list": ["steel", "steel", "steel"],
-    "target_vol_list": ["30 ml", "30 ml", "30 ml"],
-    "set_target_list": [True, True, True],
+    "syringe_list": [50, 50, 50, 50],
+    "syringe_mater_list": ["steel", "steel", "steel", "steel"],
+    "target_vol_list": ["30 ml", "30 ml", "30 ml", "30 ml"],
+    "set_target_list": [True, True, True, True],
     "rate_unit": "ul/min",
     "mixer_lengths_cm": [30.0],
     "resident_t_ratio": 1.0,
-    "precursor_list": ["CsPbOA", "TOABr", "ZnI2"],
-    "precursor_prefix_list":['CsPb', 'Br', 'I2'], 
-    "post_dilute": False,
+    "precursor_list": ["CsPbOA", "TOABr", "ZnI2", "OAm"],
+    "precursor_prefix_list":['CsPb', 'Br', 'I2', "OAm"], 
+    "post_dilute": True,
     "post_dilute_ratio": [1.0],
     "post_dilute_wait_sec": 30,
     "dof_to_pump": {
         "infusion_rate_CsPb": "dds2_p1",
         "infusion_rate_Br": "dds2_p2",
         "infusion_rate_I2": "dds3_p1",
-        "infusion_rate_Cl": "dds1_p1",
-        "infusion_rate_OAm": "dds1_p2",
+        "infusion_rate_OAm": "dds2_p2",
     },
-    "dilute_pump_name": ["dds1_p2"],
+    "dilute_pump_name": ["dds1_p1", "ultra2"],
 }
 
 DEFAULT_XRAY_CONFIG: XrayConfig = {
-    "do_xray": False,
+    "do_xray": True,
     "exposure": 5.0,
     "frame_acq_time": 0.2,
     "stream_name": "scattering",
-    "no_dark": False,
+    "no_dark": True,
 }
 
 DEFAULT_WASH_CONFIG: WashConfig = {
-    "do_wash": False,
-    "pump_names": [],
+    "do_wash": True,
+    "pump_names": ["ultra1"],
     "syringe_list": [50],
     "rate_list": ["500 ul/min"],
     "duration_sec": 60,
@@ -211,7 +210,7 @@ DEFAULT_WASH_CONFIG: WashConfig = {
 }
 
 DEFAULT_QUALITY_CONFIG: QualityConfig = {
-    "use_good_bad": False,
+    "use_good_bad": True,
     "good_target": 3,
     "max_bad": 3,
     "num_abs": 10,
@@ -733,8 +732,36 @@ def steady_state_flow(
 
 
 # ---------------------------------------------------------------------------
+# Blop-metadata guard
+# ---------------------------------------------------------------------------
+
+_BLOP_CORR_KEY = "blop_correlation_uid"
+
+
+def _strip_blop_uid_from_dark(msg):
+    """Remove blop_correlation_uid from dark-frame open_run messages.
+
+    ConsumerCallback (blop queueserver) caches *every* run whose start doc
+    carries ``blop_correlation_uid``.  xpdacq's ``take_dark()`` opens a
+    separate run with ``dark_frame=True`` in its metadata; that run must NOT
+    carry the correlation uid or blop will fire the evaluator a second time
+    (with the dark run's uid instead of the scattering run's uid), causing
+    both a ``current_uid did not match`` guard failure and a pdfstream lookup
+    against the wrong uid.
+
+    xpdacq sets ``dark_frame=True`` explicitly in the ``open_run`` kwargs for
+    every dark run (see ``take_dark()`` in xpdacq.xpdacq).
+    """
+    if msg.command == "open_run" and msg.kwargs.get("dark_frame"):
+        kwargs = {k: v for k, v in msg.kwargs.items() if k != _BLOP_CORR_KEY}
+        return msg._replace(kwargs=kwargs)
+    return msg
+
+
+# ---------------------------------------------------------------------------
 # Acquisition plan
 # ---------------------------------------------------------------------------
+
 
 def xray_uvvis_acquire(
     suggestions: list[dict],
@@ -897,7 +924,7 @@ def xray_uvvis_acquire(
         # Turn off dilute pump after Uv-Vis to save solvent
         if post_dilute:
             yield from stop_group([dilute_pump[-1]])
-            ultra1.stop_pump()
+            dilute_pump[-1].stop_pump()
             print(f"\nUv-Vis measurement finished. Turn off {dilute_pump_name[-1] = }\n")
 
         # X-ray scattering (optional)
@@ -917,6 +944,9 @@ def xray_uvvis_acquire(
         grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
         grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
         grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        # Strip blop_correlation_uid from dark-frame runs so ConsumerCallback
+        # never treats a dark run as the primary acquisition completion.
+        grand_plan = bpp.msg_mutator(grand_plan, _strip_blop_uid_from_dark)
         inner_plan = grand_plan
     elif do_xray and xray_no_dark:
         # X-ray without dark frames — still need calibration/analysis metadata
@@ -924,6 +954,8 @@ def xray_uvvis_acquire(
         grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
         grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
         grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        # Belt-and-suspenders: strip from any dark runs even in no-dark mode.
+        grand_plan = bpp.msg_mutator(grand_plan, _strip_blop_uid_from_dark)
         inner_plan = grand_plan
     else:
         inner_plan = acquisition()
