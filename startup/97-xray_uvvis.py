@@ -484,6 +484,29 @@ def measure_pl(qepro, n_shots, *, stream="fluorescence", settle_sec=2):
         yield from bps.trigger_and_read([qepro], name=stream)
 
 
+def _safe_get(sig, default=None):
+            try:
+                return sig.get()
+            except Exception as exc:
+                return f"<err:{type(exc).__name__}:{exc}>"
+        
+def _debug_pe1_state(det, prefix="[XRAY DBG]"):
+    cam  = getattr(det, "cam", None)
+    tiff = getattr(det, "tiff", None)
+    
+    state = {
+        "det_name" : getattr(det, "name", "<unknown>"),
+        "cam.acquire" : _safe_get(getattr(cam, "acquire", None), None) if cam else None,
+        "cam.acquire_time" : _safe_get(getattr(cam, "acquire_time", None), None) if cam else None,
+        "cam.acquire_period" : _safe_get(getattr(cam, "acquire_period", None), None) if cam else None,
+        "images_per_set" : _safe_get(getattr(det, "images_per_set", None), None),
+        "number_of_sets" : _safe_get(getattr(det, "number_of_sets", None), None),
+        "tiff.capture" : _safe_get(getattr(tiff, "capture", None), None) if tiff else None,
+        "tiff.num_capture" : _safe_get(getattr(tiff, "num_capture", None), None) if tiff else None,
+        "tiff.num_captured" : _safe_get(getattr(tiff, "num_captured", None), None) if tiff else None
+    }
+    print(prefix, state)
+
 # def measure_scattering(det, exposure, *, frame_acq_time=0.2, stream_name="scattering"):
 def measure_scattering(det, stream_name="scattering"):
     """Configure and trigger the area detector for X-ray scattering.
@@ -513,10 +536,16 @@ def measure_scattering(det, stream_name="scattering"):
     # sp_md = yield from _pre_plan([det], exposure, frame_acq_time=frame_acq_time)
     # yield from configure_area_det(det, exposure, acq_time=frame_acq_time)
 
+    print("[XRAY DBG] pre-trigger state")
+    _debug_pe1_state(det, prefix="[XRAY DBG pre]")
+    
     # Open fast shutter, acquire, close fast shutter
     yield from bps.mv(fs, -20)
     yield from bps.trigger_and_read([det], name=stream_name)
     yield from bps.mv(fs, 20)
+    
+    print("[XRAY DBG] post-trigger state")
+    _debug_pe1_state(det, prefix="[XRAY DBG post]")
 
 
 def _emit_quality_event(result):
