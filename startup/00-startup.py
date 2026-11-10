@@ -7,6 +7,8 @@ import time as ttime
 from IPython import get_ipython
 from databroker import Broker
 from tiled.client import from_profile
+from bluesky.utils import ts_msg_hook
+import subprocess
 
 ip = get_ipython()
 
@@ -105,9 +107,7 @@ from bluesky.callbacks.broker import verify_files_saved, post_run
 RE.md["facility"] = "NSLS-II"
 RE.md["group"] = "XPD"
 RE.md["beamline_id"] = "28-ID-2"
-
-import subprocess
-
+RE.msg_hook = ts_msg_hook
 
 def show_env():
     # this is not guaranteed to work as you can start IPython without hacking
