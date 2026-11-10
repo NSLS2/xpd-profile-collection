@@ -53,13 +53,16 @@ def _pre_plan(dets: Sequence[Readable], exposure, frame_acq_time=None):
 
         yield from bps.mv(ad.cam.acquire, 0)
         yield from bps.mv(ad.cam.acquire_time, frame_acq_time)
+        yield from bps.sleep(1)
         yield from bps.mv(ad.cam.acquire_period, frame_acq_time)
+        yield from bps.sleep(1)
         # num_frame = yield from bps.rd(ad.cam.num_images)
         num_frame = float(np.ceil(exposure / frame_acq_time))
         yield from bps.mv(ad.images_per_set, num_frame)
         acq_time = yield from bps.rd(ad.cam.acquire_time)
         computed_exposure = float(num_frame * acq_time)
         yield from bps.mv(ad.cam.acquire, 1)
+        yield from bps.sleep(1)
 
     for ad in (d for d in dets if hasattr(d, "driver")):
         if hasattr(ad, 'number_of_sets'):
