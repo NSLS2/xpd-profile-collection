@@ -48,6 +48,7 @@ def uvvis_acquire(
     actuators,
     sensors=None,
     md=None,
+    user_md=None,
     *,
     flow_config: FlowConfig | None = None,
     wash_config: WashConfig | None = None,
@@ -136,6 +137,8 @@ def uvvis_acquire(
         "detectors": ["qepro"],
     }
     _md.update(md or {})
+    if user_md:
+        _md.update(user_md)
 
     monitor = (
         PLQualityMonitor(qepro, stream_name="fluorescence") if use_good_bad else None
