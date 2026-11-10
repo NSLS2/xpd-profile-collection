@@ -768,6 +768,7 @@ def xray_uvvis_acquire(
     actuators,
     sensors=None,
     md=None,
+    user_md=None,
     *,
     flow_config: FlowConfig | None = None,
     xray_config: XrayConfig | None = None,
@@ -891,6 +892,8 @@ def xray_uvvis_acquire(
     }
     _md.update(md or {})
     _md.update(sp_md)
+    if user_md:
+        _md.update(user_md)
 
     # Quality monitoring
     monitor = (

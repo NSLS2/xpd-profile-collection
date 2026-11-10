@@ -297,6 +297,8 @@ def xray_acquire(
     }
     _md.update(md or {})
     _md.update(sp_md)
+    if user_md:
+        _md.update(user_md)
 
     dilute_pump = _resolve_pumps(dilute_pump_name) if post_dilute else []
 
