@@ -47,11 +47,25 @@ def _pre_plan(dets: Sequence[Readable], exposure, frame_acq_time=None):
     # setting up area_detector
     # from xpdacq.beamtime import _configure_area_det
     for ad in (d for d in dets if hasattr(d, "cam")):
-        (num_frame, acq_time, computed_exposure) = yield from configure_area_det(ad, exposure, frame_acq_time)
-    # else:
-    #     acq_time = 0
-    #     computed_exposure = exposure
-    #     num_frame = 0
+        # (num_frame, acq_time, computed_exposure) = yield from _configure_area_det(exposure)
+        if hasattr(ad, 'number_of_sets'):
+            yield from bps.mv(ad.number_of_sets, 1)
+
+        yield from bps.mv(ad.cam.acquire_time, exposure)
+        yield from bps.mv(ad.cam.acquire_period, exposure)
+        num_frame = yield from bps.rd(ad.cam.num_images)
+        acq_time = yield from bps.rd(ad.cam.acquire_time)
+        computed_exposure = num_frame * acq_time
+
+    for ad in (d for d in dets if hasattr(d, "driver")):
+        if hasattr(ad, 'number_of_sets'):
+            yield from bps.mv(ad.number_of_sets, 1)
+
+        yield from bps.mv(ad.driver.acquire_time, exposure)
+        yield from bps.mv(ad.driver.acquire_period, exposure)
+        num_frame = yield from bps.rd(ad.driver.num_images)
+        acq_time = yield from bps.rd(ad.driver.acquire_time)
+        computed_exposure = num_frame * acq_time
 
     acq_time = float(acq_time)
     computed_exposure = float(computed_exposure)
