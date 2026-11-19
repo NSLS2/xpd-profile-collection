@@ -233,10 +233,10 @@ class syrng_ultra(Device):
             # yield from bps.abs_set(self.clear_withdrawn, 1, wait=True)
 
         if self.communication.get() == 'Disabled':
-            yield from bps.mv(self.communication, 0, self.update_pump, 6)
+            yield from bps.mv(self.communication, 0, self.update_pump, 'Event') # Before x,y,z,6) which led to continuous beeping
         else:
             # Pump already enabled
-            yield from bps.mv(self.update_pump, 6)
+            yield from bps.mv(self.update_pump, 'Event')
 
         def _syringe_size(input_size, syringe_material):
             #yield from bps.mv(self.set_infuse_range, 1, self.set_withdraw_range, 1)
