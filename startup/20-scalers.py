@@ -2,7 +2,7 @@ from ophyd import EpicsScaler
 from ophyd import EpicsSignalRO
 from ophyd import Component as C
 
-em = EpicsScaler('XF:28IDC-BI:1{IM:02}', name='em')
+em = EpicsScaler('XF:28IDC-BI{IM:02}EM180', name='em')
 em.channels.read_attrs = ['chan%d' % i for i in [22, 21, 20, 23]]
 # Default of em.channels.chan22 is 'em_channels_chan22'.
 # Change it to 'em_chan22' for brevity.

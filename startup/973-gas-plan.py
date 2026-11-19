@@ -5,9 +5,10 @@ import bluesky.preprocessors as bpp
 
 from bluesky.callbacks import LiveTable, LivePlot
 from xpdacq.beamtime import (_configure_area_det, shutter_step,
-                             open_shutter_stub, close_shutter_stub,
+                            #  open_shutter_stub, close_shutter_stub,
                              _nstep)
 from xpdacq.xpdacq_conf import xpd_configuration
+
 
 ####  Plan to run Gas/RGA2 over xpdacq protocols of samples ########
 

@@ -109,127 +109,42 @@ existing_devices:
     is_movable: true
     is_readable: true
     module: ophyd.signal
-  XPD_shutter:
-    classname: EpicsMotor
-    components:
-      acceleration:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      direction_of_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      high_limit_switch:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      high_limit_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      home_forward:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      home_reverse:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      low_limit_switch:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      low_limit_travel:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_done_move:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_egu:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_is_moving:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      motor_stop:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      offset_freeze_switch:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      set_use_switch:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_offset:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_offset_dir:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_readback:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      user_setpoint:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      velocity:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
+  _Q_BATCH_INDEX:
+    classname: Signal
     is_flyable: false
     is_movable: true
     is_readable: true
-    module: ophyd.epics_motor
+    module: ophyd.signal
+  _Q_N_BAD:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_N_EVENTS:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_N_GOOD:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_PEAK_WL:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_VERDICT:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
   bpm1_y:
     classname: EpicsMotor
     components:
@@ -7256,7 +7171,19 @@ existing_devices:
         is_movable: true
         is_readable: true
         module: ophyd.signal
+      num_trigs_avg:
+        classname: EpicsSignalRO
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
       period:
+        classname: EpicsSignal
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
+      period_rb:
         classname: EpicsSignal
         is_flyable: false
         is_movable: true
@@ -15044,6 +14971,18 @@ existing_plans:
       name: rga_masses
     properties:
       is_generator: true
+  _emit_quality_event:
+    description: Emit one event in the ``fluorescence_quality`` stream from a result
+      dict.
+    module: __main__
+    name: _emit_quality_event
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: result
+    properties:
+      is_generator: true
   _extract_motor_pos:
     module: __main__
     name: _extract_motor_pos
@@ -15052,6 +14991,34 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: mtr
+    properties:
+      is_generator: true
+  _inner_Absorption:
+    module: __main__
+    name: _inner_Absorption
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det2
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_abs
+    properties:
+      is_generator: true
+  _inner_fluorescence:
+    module: __main__
+    name: _inner_fluorescence
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det2
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_flu
     properties:
       is_generator: true
   _inner_loop:
@@ -15101,6 +15068,100 @@ existing_plans:
       name: done_signal
     properties:
       is_generator: true
+  _inner_scattering:
+    module: __main__
+    name: _inner_scattering
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dets
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
+    - default: '0.2'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: frame_acq_time
+    - default: '''primary'''
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stream_name
+    - default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - default: 'False'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: no_dark
+    - default: '[]'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: jogging
+    - default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: user_config
+    properties:
+      is_generator: true
+  _pl_with_quality_gate:
+    description: Run PL batches until good/bad termination.
+    module: __main__
+    name: _pl_with_quality_gate
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: qepro
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: monitor
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_flu
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: good_target
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: max_bad
+    properties:
+      is_generator: true
+  _pre_plan:
+    description: Handle detector exposure time + xpdan required metadata
+    module: __main__
+    name: _pre_plan
+    parameters:
+    - annotation:
+        type: collections.abc.Sequence[__READABLE__]
+      convert_device_names: true
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dets
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: frame_acq_time
+    properties:
+      is_generator: true
   _read_the_first_key:
     description: Helper to get 'the right' reading.
     module: __main__
@@ -15120,6 +15181,45 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: mm_mode
+    properties:
+      is_generator: true
+  _wash_loop:
+    description: Configure, start, wait, and stop wash pumps to clean tubing.
+    module: __main__
+    name: _wash_loop
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: pump_list
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: syringe_list
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: rate_list
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: duration_sec
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_mater_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: target_vol_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: set_target_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: rate_unit
     properties:
       is_generator: true
   _xpd_pre_plan:
@@ -15157,7 +15257,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'
       kind:
@@ -15312,7 +15412,10 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: target_field
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -15340,7 +15443,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -15361,7 +15464,7 @@ existing_plans:
         value: 1
       name: backstep
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.8'
       description: threshold for going backward and rescanning a region, default is
         0.8
@@ -15370,7 +15473,7 @@ existing_plans:
         value: 1
       name: threshold
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -15464,7 +15567,7 @@ existing_plans:
     name: caching_repeater
     parameters:
     - annotation:
-        type: typing.Optional[int]
+        type: int | None
       description: total number of repetitions; if None, infinite
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -15497,7 +15600,7 @@ existing_plans:
     name: close_run
     parameters:
     - annotation:
-        type: typing.Optional[str]
+        type: str | None
       default: None
       description: The exit status to report in the Stop document
       kind:
@@ -15505,7 +15608,7 @@ existing_plans:
         value: 1
       name: exit_status
     - annotation:
-        type: typing.Optional[str]
+        type: str | None
       default: None
       description: Long-form description of why the run ended
       kind:
@@ -15558,6 +15661,14 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: stream_name
+    - annotation:
+        type: collections.abc.Sequence[str]
+      default: ()
+      description: Additional groups to monitor while collecting from flyers.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: watch
     properties:
       is_generator: false
   complete:
@@ -15574,7 +15685,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'
       kind:
@@ -15610,7 +15721,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'
       kind:
@@ -15692,7 +15803,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Optional[int]
+        type: int | None
       default: '1'
       description: 'number of readings to take; default is 1
 
@@ -15703,7 +15814,7 @@ existing_plans:
         value: 1
       name: num
     - annotation:
-        type: typing.Union[float, collections.abc.Iterable[float]]
+        type: float | collections.abc.Iterable[float]
       default: '0.0'
       description: Time delay in seconds between successive readings; default is 0.
       kind:
@@ -15719,7 +15830,7 @@ existing_plans:
         value: 3
       name: per_shot
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -15752,7 +15863,7 @@ existing_plans:
   count_with_calib:
     description: Take one or more readings from detectors with shutter control and
       calibration metadata injection.
-    module: xpdacq.beamtime
+    module: __main__
     name: count_with_calib
     parameters:
     - annotation:
@@ -15818,19 +15929,17 @@ existing_plans:
     properties:
       is_generator: false
   ct:
-    description: Take one reading from area detector with given exposure time
-    module: xpdacq.beamtime
+    description: 'Capture how many exposures are needed to get a total exposure
+
+      of the given value, and sum those into one file before saving.'
+    module: __main__
     name: ct
     parameters:
-    - description: 'list of ''readable'' objects. default to area detector
-
-        linked to xpdAcq.'
-      kind:
+    - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: dets
-    - description: total time of exposrue in seconds
-      kind:
+      name: sample
+    - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: exposure
@@ -15846,6 +15955,24 @@ existing_plans:
     module: __main__
     name: ct_60
     parameters: []
+    properties:
+      is_generator: true
+  ct_dark:
+    module: __main__
+    name: ct_dark
+    parameters:
+    - annotation:
+        type: list
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dets
+    - annotation:
+        type: float
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
     properties:
       is_generator: true
   ct_motors_plan:
@@ -16186,7 +16313,9 @@ existing_plans:
     module: pandas.core.common
     name: flatten
     parameters:
-    - description: The non string sequence to flatten
+    - annotation:
+        type: '''Iterable'''
+      description: The non string sequence to flatten
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -16207,7 +16336,7 @@ existing_plans:
         value: 1
       name: flyers
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -16366,7 +16495,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Union[collections.abc.Iterable, bool, NoneType]
+        type: collections.abc.Iterable[typing.Any] | bool | None
       default: None
       description: 'which axes should be snaked, either ``False`` (do not snake any
         axes),
@@ -16395,7 +16524,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -16460,25 +16589,6 @@ existing_plans:
       name: dets
     properties:
       is_generator: true
-  group_by_sample:
-    description: Group the sample and plan by sample. Return sample, a list of plans.
-    module: xpdacq.xpdacq
-    name: group_by_sample
-    parameters:
-    - annotation:
-        type: list
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: sample
-    - annotation:
-        type: list
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: plan
-    properties:
-      is_generator: true
   halogen_off:
     module: __main__
     name: halogen_off
@@ -16495,6 +16605,12 @@ existing_plans:
     description: Prepare for an energy calibration scan (Ecal)
     module: __main__
     name: initialize_ecal
+    parameters: []
+    properties:
+      is_generator: true
+  inject_xrun_md:
+    module: __main__
+    name: inject_xrun_md
     parameters: []
     properties:
       is_generator: true
@@ -16516,7 +16632,7 @@ existing_plans:
         value: 1
       name: num
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       kind:
         name: VAR_POSITIONAL
@@ -16528,7 +16644,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       kind:
         name: KEYWORD_ONLY
@@ -16605,7 +16721,9 @@ existing_plans:
     module: bluesky.plan_stubs
     name: install_suspender
     parameters:
-    - description: The suspender to install
+    - annotation:
+        type: bluesky.suspenders.SuspenderBase
+      description: The suspender to install
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -16625,7 +16743,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'.
       kind:
@@ -16660,7 +16778,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'.
       kind:
@@ -16737,7 +16855,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "patterned like (``motor1, position_list1,``\n                ``motor2,\
         \ position_list2,``\n                ``motor3, position_list3,``\n       \
@@ -16779,7 +16897,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -16802,7 +16920,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: tuple[typing.Union[__MOVABLE__, typing.Any], list[typing.Any]]
+        type: tuple[__MOVABLE__ | typing.Any, list[typing.Any]]
       convert_device_names: true
       description: "For one dimension, ``motor, [point1, point2, ....]``.\nIn general:\n\
         \n.. code-block:: python\n\n    motor1, [point1, point2, ...],\n    motor2,\
@@ -16823,7 +16941,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -16833,8 +16951,7 @@ existing_plans:
     properties:
       is_generator: true
   load_sample:
-    description: For robot.
-    module: xpdacq.xpdacq
+    module: __main__
     name: load_sample
     parameters:
     - kind:
@@ -16877,7 +16994,10 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -16919,6 +17039,74 @@ existing_plans:
       name: md
     properties:
       is_generator: true
+  measure_absorbance:
+    description: Configure optics for absorbance and trigger ``n_shots`` reads.
+    module: __main__
+    name: measure_absorbance
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: qepro
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: n_shots
+    - default: '''absorbance'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: stream
+    - default: '2'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: settle_sec
+    properties:
+      is_generator: true
+  measure_pl:
+    description: Configure optics for PL and trigger ``n_shots`` reads.
+    module: __main__
+    name: measure_pl
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: qepro
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: n_shots
+    - default: '''fluorescence'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: stream
+    - default: '2'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: settle_sec
+    properties:
+      is_generator: true
+  measure_scattering:
+    description: Configure and trigger the area detector for X-ray scattering.
+    module: __main__
+    name: measure_scattering
+    parameters:
+    - description: The area detector (e.g., pe1c).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det
+    - default: '''scattering'''
+      description: Name of the event stream for scattering data.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stream_name
+    properties:
+      is_generator: true
   monitor:
     description: Asynchronously monitor for new values and emit Event documents.
     module: bluesky.plan_stubs
@@ -16932,7 +17120,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[str]
+        type: str | None
       default: None
       description: name of event stream; default is None
       kind:
@@ -16952,7 +17140,7 @@ existing_plans:
     name: mv
     parameters:
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: device1, value1, device2, value2, ...
       kind:
@@ -16960,13 +17148,21 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: Used to mark these as a unit to be waited on.
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: float | None
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -17004,7 +17200,7 @@ existing_plans:
     name: mvr
     parameters:
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: device1, value1, device2, value2, ...
       kind:
@@ -17012,13 +17208,21 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: Used to mark these as a unit to be waited on.
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: float | None
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -17042,7 +17246,7 @@ existing_plans:
     name: mv
     parameters:
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: device1, value1, device2, value2, ...
       kind:
@@ -17050,13 +17254,21 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: Used to mark these as a unit to be waited on.
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: float | None
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -17071,7 +17283,7 @@ existing_plans:
     name: mvr
     parameters:
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: device1, value1, device2, value2, ...
       kind:
@@ -17079,13 +17291,21 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: Used to mark these as a unit to be waited on.
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: float | None
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -17106,7 +17326,7 @@ existing_plans:
     name: open_run
     parameters:
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17142,7 +17362,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Union[collections.abc.Iterable, bool, NoneType]
+        type: collections.abc.Iterable[typing.Any] | bool | None
       default: None
       description: 'which axes should be snaked, either ``False`` (do not snake any
         axes),
@@ -17171,7 +17391,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17239,11 +17459,13 @@ existing_plans:
     properties:
       is_generator: true
   prepare:
-    description: Prepare a device.
+    description: Prepare a device ready for trigger or kickoff.
     module: bluesky.plan_stubs
     name: prepare
     parameters:
-    - description: Device with 'prepare' method
+    - annotation:
+        type: bluesky.protocols.Preparable
+      description: Device with 'prepare' method
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -17253,7 +17475,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'
       kind:
@@ -17281,6 +17503,16 @@ existing_plans:
     module: __main__
     name: print_glbl_qserver
     parameters: []
+    properties:
+      is_generator: true
+  print_pump_server:
+    module: __main__
+    name: print_pump_server
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: pump_list
     properties:
       is_generator: true
   print_summary_wrapper:
@@ -17337,7 +17569,7 @@ existing_plans:
         value: 1
       name: take_pre_data
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'If not None, the maximum time the ramp can run.
 
@@ -17348,7 +17580,7 @@ existing_plans:
         value: 1
       name: timeout
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'If not None, take data no faster than this.  If None, take
 
@@ -17366,7 +17598,7 @@ existing_plans:
         value: 1
       name: period
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -17469,14 +17701,14 @@ existing_plans:
       name: motor
     - annotation:
         type: float
-      description: starting position of motor
+      description: starting position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: start
     - annotation:
         type: float
-      description: ending position of motor
+      description: ending position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -17490,7 +17722,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -17511,7 +17743,7 @@ existing_plans:
         value: 1
       name: backstep
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.8'
       description: threshold for going backward and rescanning a region, default is
         0.8
@@ -17520,7 +17752,7 @@ existing_plans:
         value: 1
       name: threshold
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17543,14 +17775,14 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       kind:
         name: VAR_POSITIONAL
         value: 2
       name: args
     - annotation:
-        type: typing.Union[collections.abc.Iterable, bool, NoneType]
+        type: collections.abc.Iterable[typing.Any] | bool | None
       default: None
       description: 'which axes should be snaked, either ``False`` (do not snake any
         axes),
@@ -17579,7 +17811,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17605,7 +17837,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "patterned like (``motor1, position_list1,``\n                ``motor2,\
         \ position_list2,``\n                ``motor3, position_list3,``\n       \
@@ -17647,7 +17879,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17670,7 +17902,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "For one dimension, ``motor, [point1, point2, ....]``.\nIn general:\n\
         \n.. code-block:: python\n\n    motor1, [point1, point2, ...],\n    motor2,\
@@ -17690,7 +17922,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17750,7 +17982,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17773,7 +18005,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "For one dimension, ``motor, start, stop``.\nIn general:\n\n..\
         \ code-block:: python\n\n    motor1, start1, stop1,\n    motor2, start2, start2,\n\
@@ -17800,7 +18032,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -17829,7 +18061,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -17910,7 +18142,7 @@ existing_plans:
         value: 1
       name: nth
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse. If None, it
 
@@ -17938,7 +18170,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18005,7 +18237,7 @@ existing_plans:
         value: 1
       name: factor
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse, if not specifed
 
@@ -18015,7 +18247,7 @@ existing_plans:
         value: 3
       name: dr_y
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.0'
       description: Tilt angle in radians, default 0.0
       kind:
@@ -18033,7 +18265,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18110,7 +18342,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18149,14 +18381,14 @@ existing_plans:
       name: motor
     - annotation:
         type: float
-      description: starting position of motor
+      description: starting position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: start
     - annotation:
         type: float
-      description: ending position of motor
+      description: ending position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -18170,7 +18402,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -18191,7 +18423,7 @@ existing_plans:
         value: 1
       name: backstep
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.8'
       description: threshold for going backward and rescanning a region, default is
         0.8
@@ -18200,7 +18432,7 @@ existing_plans:
         value: 1
       name: threshold
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18227,7 +18459,7 @@ existing_plans:
         value: 1
       name: num
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       kind:
         name: VAR_POSITIONAL
@@ -18239,7 +18471,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       kind:
         name: KEYWORD_ONLY
@@ -18261,7 +18493,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "For one dimension, ``motor, [point1, point2, ....]``.\nIn general:\n\
         \n.. code-block:: python\n\n    motor1, [point1, point2, ...],\n    motor2,\
@@ -18281,7 +18513,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18341,7 +18573,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18364,14 +18596,14 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       kind:
         name: VAR_POSITIONAL
         value: 2
       name: args
     - annotation:
-        type: typing.Union[collections.abc.Iterable, bool, NoneType]
+        type: collections.abc.Iterable[typing.Any] | bool | None
       default: None
       description: 'which axes should be snaked, either ``False`` (do not snake any
         axes),
@@ -18400,7 +18632,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18423,7 +18655,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "For one dimension, ``motor, start, stop``.\nIn general:\n\n..\
         \ code-block:: python\n\n    motor1, start1, stop1,\n    motor2, start2, start2,\n\
@@ -18450,7 +18682,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18516,7 +18748,7 @@ existing_plans:
         value: 1
       name: nth
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse. If None, it
 
@@ -18544,7 +18776,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18611,7 +18843,7 @@ existing_plans:
         value: 1
       name: factor
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse, if not specifed
 
@@ -18621,7 +18853,7 @@ existing_plans:
         value: 3
       name: dr_y
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.0'
       description: Tilt angle in radians, default 0.0
       kind:
@@ -18639,7 +18871,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18653,7 +18885,9 @@ existing_plans:
     module: bluesky.plan_stubs
     name: remove_suspender
     parameters:
-    - description: The suspender to remove
+    - annotation:
+        type: bluesky.suspenders.SuspenderBase
+      description: The suspender to remove
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -18671,7 +18905,7 @@ existing_plans:
         value: 1
       name: plan
     - annotation:
-        type: typing.Optional[int]
+        type: int | None
       default: '1'
       description: 'number of readings to take; default is 1
 
@@ -18682,7 +18916,7 @@ existing_plans:
         value: 1
       name: num
     - annotation:
-        type: typing.Union[float, collections.abc.Iterable[float]]
+        type: float | collections.abc.Iterable[float]
       default: '0.0'
       description: time delay between successive readings; default is 0
       kind:
@@ -18697,7 +18931,7 @@ existing_plans:
     name: repeater
     parameters:
     - annotation:
-        type: typing.Optional[int]
+        type: int | None
       description: total number of repetitions; if None, infinite
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -18757,18 +18991,16 @@ existing_plans:
     properties:
       is_generator: true
   robot_wrapper:
-    description: "Wrap a plan in load/unload messages.\nParameters\n----------\nplan\
-      \ : a bluesky plan\nsample : dict\n    must contain 'position'; optionally also\
-      \ 'geometry'\nExample\n-------\n>>> plan = count([pe1c])\n>>> new_plan = robot_wrapper(plan,\
-      \ {'position': 1})"
-    module: xpdacq.xpdacq
+    description: Wrap a plan in load/unload messages.
+    module: __main__
     name: robot_wrapper
     parameters:
     - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: plan
-    - kind:
+    - description: must contain 'position'; optionally also 'geometry'
+      kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: sample
@@ -18832,7 +19064,7 @@ existing_plans:
         value: 1
       name: detectors
     - annotation:
-        type: typing.Union[__MOVABLE__, typing.Any]
+        type: __MOVABLE__ | typing.Any
       convert_device_names: true
       description: "For one dimension, ``motor, start, stop``.\nIn general:\n\n..\
         \ code-block:: python\n\n    motor1, start1, stop1,\n    motor2, start2, stop2,\n\
@@ -18843,7 +19075,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[int]
+        type: int | None
       default: None
       description: number of points
       kind:
@@ -18861,7 +19093,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -18898,13 +19130,90 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: md
+    properties:
+      is_generator: true
+  scan_with_dark:
+    description: Take a scan with an aera detector for PDF or XRD
+    module: __main__
+    name: scan_with_dark
+    parameters:
+    - annotation:
+        type: collections.abc.Sequence[__READABLE__]
+      convert_device_names: true
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dets
+    - annotation:
+        type: float
+      default: '0.1'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
+    - annotation:
+        type: int
+      default: '0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sample_ID
+    - annotation:
+        type: dict
+      default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sample_info
+    - annotation:
+        type: dict
+      default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - annotation:
+        type: str
+      default: '''primary'''
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stream_name
+    - annotation:
+        type: bool
+      default: 'False'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: no_dark
+    - annotation:
+        type: list
+      default: '[]'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: jogging
+    - annotation:
+        type: float
+      default: '0.1'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: frame_acq_time
+    - annotation:
+        type: dict
+      default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: user_config
     properties:
       is_generator: true
   set_area_det_qserver:
@@ -19183,12 +19492,18 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: x_motor
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -19236,7 +19551,7 @@ existing_plans:
         value: 1
       name: nth
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse. If None, defaults
         to
@@ -19247,7 +19562,7 @@ existing_plans:
         value: 3
       name: dr_y
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.0'
       description: Tilt angle in radians, default 0.0
       kind:
@@ -19265,7 +19580,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -19287,12 +19602,18 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: x_motor
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -19340,7 +19661,7 @@ existing_plans:
         value: 1
       name: factor
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'Delta radius along the major axis of the ellipse, if not specifed
 
@@ -19350,7 +19671,7 @@ existing_plans:
         value: 3
       name: dr_y
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: '0.0'
       description: Tilt angle in radians, default 0.0
       kind:
@@ -19368,7 +19689,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -19390,12 +19711,18 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: x_motor
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -19453,7 +19780,7 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -19475,7 +19802,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -19483,7 +19810,7 @@ existing_plans:
         value: 3
       name: group
     - annotation:
-        type: typing.Optional[bool]
+        type: bool | None
       default: None
       description: 'If True, wait for completion before processing any more messages.
 
@@ -19509,7 +19836,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -19540,6 +19867,76 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: pump_list
+    properties:
+      is_generator: true
+  steady_state_flow:
+    description: Wrap ``plan`` with pump setup before and pump stop after.
+    module: __main__
+    name: steady_state_flow
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: plan
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: pump_list
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: rate_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: target_vol_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: set_target_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_mater_list
+    - default: '''ul/min'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: rate_unit
+    - default: '[30.0]'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer_lengths_cm
+    - default: '1.0'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: resident_t_ratio
+    - default: 'False'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: post_dilute
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_pump
+    - default: '[1.0]'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_rate_ratio
+    - default: '30'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_wait_sec
     properties:
       is_generator: true
   step_and_fly:
@@ -19753,13 +20150,6 @@ existing_plans:
       name: md
     properties:
       is_generator: true
-  take_dark:
-    description: a plan for taking a single dark frame
-    module: xpdacq.xpdacq
-    name: take_dark
-    parameters: []
-    properties:
-      is_generator: true
   take_ref_bkg_q:
     module: __main__
     name: take_ref_bkg_q
@@ -19814,7 +20204,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -19859,52 +20249,71 @@ existing_plans:
       name: name
     properties:
       is_generator: false
-  tseries:
-    description: time series scan with area detector.
-    module: xpdacq.beamtime
-    name: tseries
+  trigger_areaDet:
+    module: __main__
+    name: trigger_areaDet
     parameters:
-    - description: 'list of ''readable'' objects. default to area detector
-
-        linked to xpdAcq.'
+    - annotation:
+        type: collections.abc.Sequence[__READABLE__]
+      convert_device_names: true
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: dets
-    - description: exposure time at each reading from area detector in seconds
-      kind:
+    - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: exposure
-    - description: delay between two consecutive readings from area detector in seconds
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stream_name
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: no_dark
+    - default: '[]'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: delay
-    - description: total number of readings
+      name: jogging
+    - default: None
       kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: frame_acq_time
+    - default: '{}'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: user_config
+    properties:
+      is_generator: true
+  tseries:
+    description: 'Capture how ever many exposures are needed to get a total exposure
+
+      of the given value, and divide those into files of ''num'' exposures
+
+      each, summed.'
+    module: __main__
+    name: tseries
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sample
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
+    - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num
-    - default: 'True'
-      description: 'Option on whether delegates shutter control to ``xpdAcq``. If
-        True,
-
-        following behavior will take place:
-
-
-        `` open shutter - collect data - close shutter ``
-
-
-        To make shutter stay open during ``tseries`` scan,
-
-        pass ``False`` to this argument. See ``Notes`` below for more
-
-        detailed information.'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: auto_shutter
     properties:
       is_generator: true
   tseries_gas_plan:
@@ -19969,7 +20378,10 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: signal
-    - description: any 'settable' object (motor, temp controller, etc.)
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: any 'settable' object (motor, temp controller, etc.)
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -20023,7 +20435,7 @@ existing_plans:
         value: 1
       name: snake
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -20051,7 +20463,10 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: target_field
-    - kind:
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: motor
@@ -20063,7 +20478,7 @@ existing_plans:
         value: 1
       name: step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
@@ -20073,8 +20488,7 @@ existing_plans:
     properties:
       is_generator: true
   unload_sample:
-    description: For robot.
-    module: xpdacq.xpdacq
+    module: __main__
     name: unload_sample
     parameters: []
     properties:
@@ -20106,7 +20520,7 @@ existing_plans:
         value: 1
       name: obj
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -20114,7 +20528,7 @@ existing_plans:
         value: 3
       name: group
     - annotation:
-        type: typing.Optional[bool]
+        type: bool | None
       default: None
       description: 'If True, wait for completion before processing any more messages.
 
@@ -20140,7 +20554,7 @@ existing_plans:
         value: 2
       name: args
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: identifier used by 'wait'; None by default
       kind:
@@ -20163,13 +20577,62 @@ existing_plans:
       name: token
     properties:
       is_generator: false
+  uvvis_acquire:
+    description: UV-Vis-only acquisition plan (no X-ray).
+    module: __main__
+    name: uvvis_acquire
+    parameters:
+    - annotation:
+        type: list[dict]
+      description: One-element list from the optimizer; dict maps DOF names to rates.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: suggestions
+    - description: Ignored (blop protocol requirement).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: actuators
+    - default: None
+      description: Ignored (blop protocol requirement).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sensors
+    - default: None
+      description: Extra metadata merged into the run header.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - default: None
+      description: Overrides for DEFAULT_FLOW_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: flow_config
+    - default: None
+      description: Overrides for DEFAULT_WASH_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: wash_config
+    - default: None
+      description: Overrides for DEFAULT_QUALITY_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: quality_config
+    properties:
+      is_generator: true
   wait:
     description: Wait for all statuses in a group to report being finished.
     module: bluesky.plan_stubs
     name: wait
     parameters:
     - annotation:
-        type: typing.Optional[collections.abc.Hashable]
+        type: collections.abc.Hashable | None
       default: None
       description: Identifier given to `abs_set`, `rel_set`, `trigger`; None by default
       kind:
@@ -20177,7 +20640,7 @@ existing_plans:
         value: 1
       name: group
     - annotation:
-        type: typing.Optional[float]
+        type: float | None
       default: None
       description: 'The maximum duration, in seconds, to wait for all objects in the
         group to complete.
@@ -20201,6 +20664,17 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: error_on_timeout
+    - annotation:
+        type: collections.abc.Sequence[str]
+      default: ()
+      description: 'Additional groups to monitor while waiting for the primary group.
+        Raises an exception if any watched group
+
+        fails.'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: watch
     properties:
       is_generator: false
   wait_equilibrium:
@@ -20281,12 +20755,18 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - description: The second motor will move half as much as the first
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: The second motor will move half as much as the first
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: motor1
-    - description: The second motor will move half as much as the first
+    - annotation:
+        type: __MOVABLE__
+      convert_device_names: true
+      description: The second motor will move half as much as the first
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -20327,13 +20807,229 @@ existing_plans:
         value: 3
       name: per_step
     - annotation:
-        type: typing.Optional[dict[str, typing.Any]]
+        type: dict[str, typing.Any] | None
       default: None
       description: metadata
       kind:
         name: KEYWORD_ONLY
         value: 3
       name: md
+    properties:
+      is_generator: true
+  xray_acquire:
+    description: X-ray-only acquisition plan (no UV-Vis / QEPro).
+    module: __main__
+    name: xray_acquire
+    parameters:
+    - annotation:
+        type: list[dict]
+      description: One-element list from the optimizer; dict maps DOF names to rates.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: suggestions
+    - description: Ignored (blop protocol requirement).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: actuators
+    - default: None
+      description: Ignored (blop protocol requirement).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sensors
+    - default: None
+      description: Extra metadata merged into the run header.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - default: None
+      description: Overrides for DEFAULT_FLOW_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: flow_config
+    - default: None
+      description: Overrides for DEFAULT_XRAY_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: xray_config
+    - default: None
+      description: Overrides for DEFAULT_WASH_CONFIG.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: wash_config
+    properties:
+      is_generator: true
+  xray_uvvis_RE:
+    description: 'Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and
+      then det1.'
+    module: __main__
+    name: xray_uvvis_RE
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det1
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det2
+    - annotation:
+        type: float
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure
+    - kind:
+        name: VAR_POSITIONAL
+        value: 2
+      name: args
+    - annotation:
+        type: float
+      default: '0.2'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: frame_acq_time
+    - annotation:
+        type: dict
+      default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: md
+    - annotation:
+        type: int
+      default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_abs
+    - annotation:
+        type: int
+      default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_flu
+    - annotation:
+        type: str
+      default: '''scattering'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: stream_name
+    - annotation:
+        type: str
+      default: '''test'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: sample_type
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: pump_list
+    - annotation:
+        type: list
+      default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: precursor_list
+    - annotation:
+        type: list
+      default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer
+    - annotation:
+        type: dict
+      default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: note
+    - annotation:
+        type: bool
+      default: 'False'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: no_dark
+    - kind:
+        name: VAR_KEYWORD
+        value: 4
+      name: kwargs
+    properties:
+      is_generator: true
+  xray_uvvis_acquire:
+    description: 'Acquire UV-Vis and (optionally) X-ray scattering data for halide
+
+      perovskite optimization.'
+    module: __main__
+    name: xray_uvvis_acquire
+    parameters:
+    - annotation:
+        type: list[dict]
+      description: 'List of suggestions from the optimizer. Each dict contains DOF
+        names
+
+        as keys with their suggested values. Typically len == 1.'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: suggestions
+    - description: Pump device names (may be empty if DOFs have no actuator field).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: actuators
+    - default: None
+      description: Sensor device names (e.g., ["QEPro"]).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: sensors
+    - default: None
+      description: Metadata dict (contains blop_correlation_uid for tracking).
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: md
+    - default: None
+      description: 'Flow/pump configuration. Keys are merged with DEFAULT_FLOW_CONFIG;
+
+        only overridden keys need to be supplied. See :class:`FlowConfig`.'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: flow_config
+    - default: None
+      description: X-ray scattering configuration. See :class:`XrayConfig`.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: xray_config
+    - default: None
+      description: Wash loop configuration. See :class:`WashConfig`.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: wash_config
+    - default: None
+      description: PL quality monitoring configuration. See :class:`QualityConfig`.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: quality_config
     properties:
       is_generator: true
   xray_uvvis_plan:
@@ -20405,6 +21101,70 @@ existing_plans:
       then det1.'
     module: __main__
     name: xray_uvvis_plan2
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det1
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: det2
+    - kind:
+        name: VAR_POSITIONAL
+        value: 2
+      name: args
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: md
+    - default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_abs
+    - default: '10'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_flu
+    - default: '''test'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: sample_type
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: pump_list
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: precursor_list
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: note
+    - kind:
+        name: VAR_KEYWORD
+        value: 4
+      name: kwargs
+    properties:
+      is_generator: true
+  xray_uvvis_plan3:
+    description: 'Trigger the two detctors (det1: pe1c, det2: qepro): det2 first and
+      then det1.'
+    module: __main__
+    name: xray_uvvis_plan3
     parameters:
     - kind:
         name: POSITIONAL_OR_KEYWORD
