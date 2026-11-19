@@ -456,7 +456,8 @@ class QEPro(Device):
 
         if data_agent == 'tiled':
             run = tiled_client[uid]
-            ds = run.primary.read()
+            stream_name = list(run.stop['num_events'].keys())[0]
+            ds = run[stream_name].read()
             meta = run.metadata
 
             date, time = _readable_time(int(ds['time'][0]))
@@ -548,6 +549,7 @@ if not is_re_worker_active():
         from tiled.client import from_profile
         # tiled_client = from_profile("xpd-ldrd20-31")
         tiled_client = from_profile("xpd")
+        tiled_client.context.http_client.headers['tiled-qos'] = 'acquisition'
     except CannotPrompt:
         print("Tiled client cannot prompt for login. QEPro export to csv will not work.")
     except (NameError, ModuleNotFoundError):

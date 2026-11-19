@@ -8,21 +8,22 @@ requires-pixi = ">=0.82.1"
 [feature.profile.dependencies]
 bluesky-base = "==1.15.1"
 bluesky-queueserver = "*"
-matplotlib-base = ">=3.9.3,<4"
+matplotlib-base= ">=3.10"
 networkx = ">=3.4.2,<4"
-nslsii = "==0.11.9"
+nslsii = "==0.11.8"
 numpy = "*"
 ophyd = "==1.11.0"
 pyepics = "*"
 python = ">=3.12,<3.13"
 semver = ">=3.0.4,<4"
-tiled-client = ">=0.2.21"
+tiled-client = "==0.2.16"
 # needed until we get ophyd-async packaged
 colorlog = ">=6.9.0,<7"
 xpdan = ">=0.8.2,<0.9"
-xpdacq = ">=1.1.4,<2"
-databroker = ">=2.0.2"
-bluesky-tiled-plugins = ">=2.0.3"
+#xpdacq = ">=1.1.4,<2"
+xpdacq = "==1.0.0"
+databroker = "==2.0.0b68"
+bluesky-tiled-plugins = "==2.0.2"
 lmfit = ">=1.3.4,<2"
 bluesky-darkframes = ">=0.6.0,<0.7"
 hdf5-external-filter-plugins = ">=0.1.0,<0.2"
@@ -33,15 +34,19 @@ epicscorelibs = ">=7.0.7.99.1.1,<8"
 ca-certificates = ">=2026.10.19"
 certifi = ">=2026.10.19"
 pip = ">=26.2.2"
+# xpdconf and xpdacq import pkg_resources, which setuptools 82 removed
+setuptools = "<82"
 
 
 [feature.profile.pypi-dependencies]
+# TJ's Queue Server plans (startup/98-xpd-tools.py loads them). In the shared profile
+# feature because bsui runs that startup file too. No extras: the optimizer stays on ws3.
+xpd-tools = { git = "https://github.com/NSLS2/xpd-tools", rev = "autonomous" }
 ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
 
 [feature.qs.dependencies]
 bluesky-queueserver = "*"
 bluesky-httpserver = "*"
-setuptools = "<70"
 
 [feature.qs.tasks]
 # This section needs some development work to understand the best way to
@@ -51,20 +56,24 @@ setuptools = "<70"
 qs-backend = "start-re-manager --profile-dir=."
 qs-server = "uvicorn --host localhost --port 60610 bluesky_httpserver.server:app"
 
-
 [feature.terminal.dependencies]
 ipython = ">=9.5.0"
 pyside6 = "*"
 numpy = ">2"
-redis-py = "<6"
+pymatgen = "*"
+botorch = "*"
+gpytorch = "*"
+"diffpy.pdffit2" = "*"
+"diffpy.structure" = "*"
+jupyterlab = "*"
 
+[feature.terminal.pypi-dependencies]
+blop = { git = "https://github.com/bluesky/blop.git", rev = "testing-xpd", extras = ["cpu"] }
 
 [feature.terminal.tasks]
-start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=."
+start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=$HOME/.ipython/profile_$BS_PROFILE"
 pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
-
-[feature.qs.pypi-dependencies]
-xpd-tools = { git = "https://github.com/NSLS2/xpd-tools", rev = "autonomous" }
+git-install-bluesky = "pip install -v git+https://github.com/bluesky/bluesky.git"
 
 [environments.terminal]
 features = ["profile", "terminal"]

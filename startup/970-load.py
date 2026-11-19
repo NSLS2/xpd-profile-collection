@@ -18,12 +18,12 @@ import httpx
 from nslsii.sync_experiment import sync_experiment
 from pprint import pformat
 
-from redis_json_dict import RedisJSONDict
-import redis
+# TODO: Remove this once the fix is merged upstream
+os.environ["REDIS_HOST"] = "xf28id2-xpd-redis1.nsls2.bnl.gov"
 
 def pass_start_beamtime(proposal_num, saf_num, wavelength, experimenters=[], test=False, commissioning=False):
 
-    sync_experiment(proposal_num, "XPD")
+    sync_experiment(proposal_num, "xpd", redis_ssl=True)
 
     # Copied from NSLS2/start-experiment:
     nslsii_api_client = httpx.Client(base_url="https://api.nsls2.bnl.gov")
@@ -98,15 +98,11 @@ if is_re_worker_active():  # running in queueserver
     from nslsii import configure_kafka_publisher
     from bluesky.utils import ts_msg_hook
 
-    # RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
-    # Manually set re.md to redis.
-    RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
-    # RE.msg_hook = ts_msg_hook
-
+    # RE.md (SSL Redis) and the Tiled subscription come from nslsii.configure_base in 00-startup.py.
     RE.md.update(md)
 
-    # insert header to db, either simulated or real
-    RE.subscribe(tiled_inserter.insert, "all")
+    # Kafka publishing is queueserver-only; bsui keeps it disabled.
+    configure_kafka_publisher(RE, beamline_name="xpd")
 
     from xpdacq.beamtimeSetup import start_xpdacq
     
@@ -144,7 +140,7 @@ else:
         pe1c = xpd_pe1c # alias
 
     configure_device(area_det=pe1c, shutter=shctl1,
-                     temp_controller=cs700, db='xpd',
+                     temp_controller=cs700, db=db,
                      filter_bank=fb,
                      ring_current=ring_current,
                      robot=robot)
@@ -178,6 +174,8 @@ else:
     xrun.md = RE.md
     xrun.md.update(md)
 
+    print("loading beamline config")
+
     beamline_config = _load_beamline_config(glbl['blconfig_path'])
 
     print("loaded beamline config")
@@ -189,7 +187,7 @@ else:
     # xrun.subscribe(db.insert, 'all')
 
     # We need to repeat it here for `xrun` as RE is not used here...
-    nslsii.configure_kafka_publisher(xrun, "xpd")
+    #nslsii.configure_kafka_publisher(xrun, "xpd")
 
     # robot command
     xrun.register_command('load_sample', _load_sample)
@@ -214,34 +212,44 @@ else:
 
     print('OK, ready to go.  To continue, follow the steps in the xpdAcq')
     print('documentation at http://xpdacq.github.io/xpdacq\n')
-    
-    # RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
-    # # Manually set re.md to redis.
-    # RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
-    # # RE.msg_hook = ts_msg_hook
 
-    # RE.md.update(md)
 
-    # # insert header to db, either simulated or real
-    # RE.subscribe(tiled_inserter.insert, "all")
-    
-    # bt = start_xpdacq()
-    # if bt:
-    #     print(bt)
-    #     RE.clear_suspenders()
-    #     RE.beamtime = bt
-    # try:
-    #     print(f"{RE.beamtime = }")
-    # except RuntimeError as e:
-    #     print("=====================\n\n")
-    #     print(str(e))
-    #     print("=====================\n\n")
+    class MoreCustomizedRunEngine(CustomizedRunEngine):
+        def __call__(self, plan, *args, **kwargs):
+            return super().__call__({}, plan, *args, **kwargs)
+            # return tuple(self._run_start_uids)
 
-    # def ct_1():
-    #     yield from RE.beamtime.scanplans["ct_1"].factory()
+# #from nslsii import configure_kafka_publisher
+# from bluesky.utils import ts_msg_hook
+# from redis_json_dict import RedisJSONDict
+# import redis
 
-    # def ct_60():
-    #     yield from RE.beamtime.scanplans["ct_60"].factory()
+# RE = MoreCustomizedRunEngine(None)  # This object is like 'xrun', but with the RE API.
+# # Manually set re.md to redis.
+# RE.md = RedisJSONDict(redis.Redis("info.xpd.nsls2.bnl.gov", 6379), prefix="")
+# # RE.msg_hook = ts_msg_hook
 
-from bluesky_kafka import Publisher as kpub
-res = nslsii.configure_kafka_publisher(RE, beamline_name="xpd")
+# #configure_kafka_publisher(RE, beamline_name='xpd')
+# RE.md.update(md)
+
+# # insert header to db, either simulated or real
+# RE.subscribe(tiled_inserter.insert, "all")
+# # RE.subscribe(db.insert, "all")
+# if bt:
+#     RE.beamtime = bt
+# try:
+#     print(f"{RE.beamtime = }")
+# except RuntimeError as e:
+#     print("=====================\n\n")
+#     print(str(e))
+#     print("=====================\n\n")
+
+# def ct_1():
+#     yield from RE.beamtime.scanplans["ct_1"].factory()
+
+
+# def ct_60():
+#     yield from RE.beamtime.scanplans["ct_60"].factory()
+
+
+# RE.clear_suspenders()
