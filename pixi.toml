@@ -23,7 +23,7 @@ xpdan = ">=0.8.2,<0.9"
 #xpdacq = ">=1.1.4,<2"
 xpdacq = "==1.0.0"
 databroker = "==2.0.0b68"
-bluesky-tiled-plugins = "==2.0.2"
+bluesky-tiled-plugins = ">=2.0.6" # updates for xpd-tools
 lmfit = ">=1.3.4,<2"
 bluesky-darkframes = ">=0.6.0,<0.7"
 hdf5-external-filter-plugins = ">=0.1.0,<0.2"
