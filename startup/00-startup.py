@@ -92,6 +92,14 @@ nslsii.configure_base(
     redis_ssl=True
 )
 
+# Write bluesky, ophyd, ophyd-async, nslsii, this profile's and IPython's logs and a
+# summary of every document RE emits as JSON lines in /var/log/bluesky. If the
+# directory is missing or not writable, nslsii warns and skips. xrun's runs are
+# logged but their documents are not summarized.
+nslsii.configure_bluesky_json_logging(
+    ipython=get_ipython(), RE=RE, extra_loggers=["startup_profile"]
+)
+
 del one_1d_step
 del one_nd_step
 del one_shot
