@@ -2,6 +2,7 @@ from ophyd.sim import det, noisy_det
 from bluesky.utils import ts_msg_hook
 import bluesky.preprocessors as bpp
 import time
+from enum import StrEnum
 import json
 
 from xpdacq.beamtime import configure_area_det
@@ -129,15 +130,17 @@ def configure_qepro(qepro, mode: QEProMode):
         correction = 'Dark'
         spectrum_type = 'Corrected Sample'
     
-    if LED.get()==led_setting and UV_shutter.get()==uv_setting and det2.correction.get()==correction and det2.spectrum_type.get()==spectrum_type:
+    if LED.get()==led_setting and UV_shutter.get()==uv_setting and qepro.correction.get()==correction and qepro.spectrum_type.get()==spectrum_type:
         return
     
-    yield from bps.mv(det2.correction, correction, det2.spectrum_type, spectrum_type)
+    yield from bps.mv(qepro.correction, correction, qepro.spectrum_type, spectrum_type)
     yield from bps.mv(LED, led_setting, UV_shutter, uv_setting)
 
 
 def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test',
-                    pump_list=None, precursor_list=None, mixer=None, note=None, read_together: bool=False, **kwargs):
+                    pump_list=None, precursor_list=None, mixer=None, note=None,
+                    read_together: bool=False, read_scattering_start: bool = True, 
+                    read_scattering_stop: bool = True, **kwargs):
     """Trigger the two detctors (det1: pe1c, det2: qepro) for parallel measurements.
         
     Generate a scan containing three stream names: ['scattering', 'absorbance', 'fluorescence']
@@ -181,50 +184,33 @@ def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test'
     @bpp.stage_decorator([det1, det2])
     @bpp.run_decorator(md=_md)
     def trigger_two_detectors():  # TODO: rename appropriately
-        if not read_together:
+        if read_scattering_start:
             yield from bps.trigger_and_read([det1], name="scattering")
 
         abs_flu_dets = [det2] + ([det1] if read_together else [])
         for i in range(num_abs_flu):
-            ## Start to collecting absrobtion
-            # t0 = time.time()
-            spectrum_type='Absorbtion'
-            correction_type='Reference'
-            if LED.get()=='Low' and UV_shutter.get()=='High' and det2.correction.get()==correction_type and det2.spectrum_type.get()==spectrum_type:
-                pass
-            else:
-                # yield from bps.abs_set(qepro.correction, correction_type, wait=True)
-                # yield from bps.abs_set(qepro.spectrum_type, spectrum_type, wait=True)
-                yield from bps.mv(det2.correction, correction_type, det2.spectrum_type, spectrum_type)
-                yield from bps.mv(LED, 'Low', UV_shutter, 'High')
-                yield from bps.sleep(2)
-            
+            # Take absorbance reading
+            yield from configure_qepro(det2, mode=QEProMode.ABSORBANCE)
             yield from trigger_and_read(abs_flu_dets, name="absorbance")
 
-            ## Start to collecting fluorescence
-            spectrum_type='Corrected Sample'
-            correction_type='Dark'
-            if LED.get()=='High' and UV_shutter.get()=='Low' and det2.correction.get()==correction_type and det2.spectrum_type.get()==spectrum_type:
-                pass
-            else:
-                # yield from bps.abs_set(qepro.correction, correction_type, wait=True)
-                # yield from bps.abs_set(qepro.syield from bps.sleep(xray_time)pectrum_type, spectrum_type, wait=True)
-                yield from bps.mv(det2.correction, correction_type, det2.spectrum_type, spectrum_type)
-                yield from bps.mv(LED, 'High', UV_shutter, 'Low')
-                yield from bps.sleep(2)
-
+            # Take flouresence reading
+            yield from configure_qepro(det2, mode=QEProMode.FLOURESCENCE)
             yield from bps.trigger_and_read(abs_flu_dets, name="fluorescence")
 
         yield from bps.mv(LED, 'Low', UV_shutter, 'Low')
-        # t1 = time.time()
-        # xray_time = det1_time-(t1-t0)
-        # print(f'{xray_time = }')
-        # yield from bps.sleep(xray_time)
-        ...
-        ###
 
-    yield from trigger_two_detectors()
+        if read_scattering_stop:
+            yield from bps.trigger_and_read([det1], name="scattering")
 
+    ## periodic_dark has to wrap a plan which is a complete run (where run_decorator is added).
+    grand_plan = periodic_dark(trigger_two_detectors())
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+    grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+    # yield from trigger_two_detectors()
+    return (yield from grand_plan)
+
+# Det2 will always be qepro, wrap with partial for convenience
 from functools import partial
 xray_uvvis_plan = partial(xray_uvvis_plan, det2=qepro)
 
@@ -284,19 +270,9 @@ def xray_uvvis_plan2(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
         # For absorbance: spectrum_type='Absorbtion', correction_type='Reference'
         # For fluorescence: spectrum_type='Corrected Sample', correction_type='Dark'
 
-        ## Start to collecting absrobtion
+        ## Start to collecting absorbtion
         # t0 = time.time()
-        spectrum_type='Absorbtion'
-        correction_type='Reference'
-        if LED.get()=='Low' and UV_shutter.get()=='High' and det2.correction.get()==correction_type and det2.spectrum_type.get()==spectrum_type:
-            pass
-        else:
-            # yield from bps.abs_set(qepro.correction, correction_type, wait=True)
-            # yield from bps.abs_set(qepro.spectrum_type, spectrum_type, wait=True)
-            yield from bps.mv(det2.correction, correction_type, det2.spectrum_type, spectrum_type)
-            yield from bps.mv(LED, 'Low', UV_shutter, 'High')
-            yield from bps.sleep(2)
-
+        yield from configure_qepro(det2, mode=QEProMode.ABSORBANCE)
         for i in range(num_abs):
             yield from bps.trigger(det2, wait=True)
 
@@ -309,16 +285,7 @@ def xray_uvvis_plan2(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
 
 
         ## Start to collecting fluorescence
-        spectrum_type='Corrected Sample'
-        correction_type='Dark'
-        if LED.get()=='High' and UV_shutter.get()=='Low' and det2.correction.get()==correction_type and det2.spectrum_type.get()==spectrum_type:
-            pass
-        else:
-            # yield from bps.abs_set(qepro.correction, correction_type, wait=True)
-            # yield from bps.abs_set(qepro.syield from bps.sleep(xray_time)pectrum_type, spectrum_type, wait=True)
-            yield from bps.mv(det2.correction, correction_type, det2.spectrum_type, spectrum_type)
-            yield from bps.mv(LED, 'High', UV_shutter, 'Low')
-            yield from bps.sleep(2)
+        yield from configure_qepro(det2, QEProMode.FLOURESCENCE)
 
         for i in range(num_flu):  # TODO: fix the number of triggers
             yield from bps.trigger(det2, wait=True)
@@ -404,7 +371,24 @@ def xray_uvvis_plan3(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_
             pass
         else:
             # yield from bps.abs_set(qepro.correction, correction_type, wait=True)
-            # yield from bps.abs_set(qepro.spectrum_type, spectrum_type, wait=True)
+            # yield from bps.abs_s            yield from bps.mv(LED, 'High', UV_shutter, 'Low')
+            yield from bps.sleep(2)
+
+        for i in range(num_flu):  # TODO: fix the number of triggers
+            yield from bps.trigger(det2, wait=True)
+
+            yield from bps.create(name="fluorescence")
+            reading = (yield from bps.read(det2))
+            # print(f"reading = {reading}")
+            # ret.update(reading)
+            yield from bps.save()  # TODO: check if it's needed, most likely yes.
+            # yield from bps.sleep(2)
+
+        yield from bps.mv(LED, 'Low', UV_shutter, 'Low')
+        try:  
+            yield from stop_group([pump_list[-1]])
+            print(f'\nUV-Vis acquisition finished and stop infusing of {pump_list[-1].name} for toluene dilution\n')
+        except (TypeError):
             yield from bps.mv(det2.correction, correction_type, det2.spectrum_type, spectrum_type)
             yield from bps.mv(LED, 'Low', UV_shutter, 'High')
             yield from bps.sleep(2)
