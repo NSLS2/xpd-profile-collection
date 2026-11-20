@@ -137,10 +137,9 @@ def configure_qepro(qepro, mode: QEProMode):
     yield from bps.mv(LED, led_setting, UV_shutter, uv_setting)
 
 
-def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test',
-                    pump_list=None, precursor_list=None, mixer=None, note=None,
-                    read_together: bool=False, read_scattering_start: bool = True, 
-                    read_scattering_stop: bool = True, **kwargs):
+def xray_uvvis_plan(det1, det2, *,exp_time=1, md=None, num_abs_flu=10, sample_type = 'test', note=None,
+                    read_together: bool=True, read_scattering_start: bool = False, 
+                    read_scattering_stop: bool = False, **kwargs):
     """Trigger the two detctors (det1: pe1c, det2: qepro) for parallel measurements.
         
     Generate a scan containing three stream names: ['scattering', 'absorbance', 'fluorescence']
@@ -153,34 +152,27 @@ def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test'
         num_flu (int, optional): numbers of fl'Corrected Sample'uorescence spectra
         sample_type (str, optional): sample name
         pump_list (list, optional): list of pumps as ophyd.Device (example: [dds1_p1, dds1_p2, dds2_p1, dds2_p2])
-        precursor_list (list, optional): list of precursors name (example: ['CsPbOA', 'TOABr', 'ZnI2', 'Toluene'])
-        mixer (list, optional): list of mixers (example: ['30 cm', '60 cm'])
         note (str, optional): addtional info. Defaults to None.
     """
-    if (pump_list != None and precursor_list != None):
-        _md = {"pumps" : [pump.name for pump in pump_list],
-               "precursors" : precursor_list,
-               "infuse_rate" : [pump.read_infuse_rate.get() for pump in pump_list],
-               "infuse_rate_unit" : [pump.read_infuse_rate_unit.get() for pump in pump_list],
-               "pump_status" : [pump.status.get() for pump in pump_list],
-               "uvvis" :[det2.integration_time.get(), det2.num_spectra.get(), det2.buff_capacity.get()],
-               "mixer": mixer,
-               "sample_type": sample_type,
-               "sample_name": sample_type,
-               "detectors": [det1.name, det2.name], 
-               "note" : note if note else "None"}
-        _md.update(md or {})
 
-    if (pump_list == None and precursor_list == None):
-        _md = { "uvvis" :[det2.integration_time.get(), det2.num_spectra.get(), det2.buff_capacity.get()],
-                "mixer": ['exsitu measurement'],
-                "sample_type": sample_type, 
-                "sample_name": sample_type,
-                "detectors": [det1.name, det2.name], 
-                "note" : note if note else "None"}
-        _md.update(md or {})
+    _md = { "uvvis" :[det2.integration_time.get(), det2.num_spectra.get(), det2.buff_capacity.get()],
+            "sample_name": sample_type,
+            "detectors": [det1.name, det2.name], 
+            "note" : note if note else "None"}
+    _md.update(md or {})
 
-    
+    # Configure the area detector
+    (num_frame, acq_time, computed_exposure) = yield from _configure_area_det(exp_time)
+
+    # Metadata handling
+    sp_md = {
+        "sp_time_per_frame": float(acq_time),
+        "sp_num_frames": int(num_frame),
+        "sp_requested_exposure": float(exp_time),
+        "sp_computed_exposure": float(computed_exposure),
+    }
+    _md.update(sp_md)
+
     @bpp.stage_decorator([det1, det2])
     @bpp.run_decorator(md=_md)
     def trigger_two_detectors():  # TODO: rename appropriately
@@ -189,6 +181,7 @@ def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test'
 
         abs_flu_dets = [det2] + ([det1] if read_together else [])
         for i in range(num_abs_flu):
+            print(i)
             # Take absorbance reading
             yield from configure_qepro(det2, mode=QEProMode.ABSORBANCE)
             yield from trigger_and_read(abs_flu_dets, name="absorbance")
@@ -213,7 +206,6 @@ def xray_uvvis_plan(det1, det2, *, md=None, num_abs_flu=10, sample_type = 'test'
 # Det2 will always be qepro, wrap with partial for convenience
 from functools import partial
 xray_uvvis_plan = partial(xray_uvvis_plan, det2=qepro)
-
 
 # def xray_uvvis_plan2(det1, det2, *args, md=None, num_abs=10, num_flu=10, sample_type = 'test',
 #                     pump_list=None, precursor_list=None, mixer=None, note=None, **kwargs):
